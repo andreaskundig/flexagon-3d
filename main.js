@@ -15,24 +15,30 @@ const blocks = [
   {name: '2', size: {w: width, h:2}, pos:{x:0, y:-4}}
 ]
 
-const meshes = blocks.map((block, i) => {
+const meshes = blocks.reduce((meshes, block, i) => {
+// const meshes = blocks.map((block, i) => {
   const {size, pos, name} = block;
 
-
   const parentGroup = new THREE.Group();
-  parentGroup.position.set(pos.x + size.w/ 2, pos.y, 0);
+  parentGroup.position.set(pos.x, pos.y, 0);
+  parentGroup.name = 'g' + name;
 
   const geometry = new THREE.BoxGeometry(size.w, size.h, depth);
   const material = new THREE.MeshPhongMaterial({ color: colors[i % blocks.length] });
   const mesh = new THREE.Mesh(geometry, material);
-  // mesh.position.set(pos.x + size.w/2, pos.y - size.h/2, 0 );
-  mesh.position.set(0, -size.h/2, 0);
+  mesh.position.set(-size.w/2, -size.h/2, 0);
   mesh.name = 'c' + name;
+
   parentGroup.add(mesh);
 
+  const previousMesh = meshes[meshes.length - 1];
+
   scene.add(parentGroup);
-  return mesh;
-});
+  // only works if added after scene.add
+  previousMesh?.parent.add(mesh.parent);
+  meshes.push(mesh);
+  return meshes;
+}, []);
 
 window.ms = meshes;
 meshes.forEach(mesh => window[mesh.name] = mesh);
@@ -41,6 +47,9 @@ meshes.forEach(mesh => window[mesh.name] = mesh);
 const q = new THREE.Quaternion();
 q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/50);
 window.q = q;
+const q2 = new THREE.Quaternion();
+q2.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/200);
+window.q2 = q2;
 
 const c2 = meshes[1];
 c2.parent.quaternion.multiply(q);
@@ -65,8 +74,7 @@ controls.update();
 // cuboidT3a.rotation.y = 0.3;
 function animate() {
   renderer.render( scene, camera );
- // cube.rotation.x += 0.005;
-  // cube.rotation.y += 0.01;
-  // c2.parent.quaternion.multiply(q);
+  c2.parent.quaternion.multiply(q2);
+  ct3a.parent.quaternion.multiply(q2);
 }
 renderer.setAnimationLoop( animate );
