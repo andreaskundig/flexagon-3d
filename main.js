@@ -15,6 +15,15 @@ const blocks = [
   {name: '2', size: {w: width, h:2}, pos:{x:0, y:-4}}
 ]
 
+const smallBoxG = new THREE.BoxGeometry(.5, .5, .5);
+const smallCylG = new THREE.CylinderGeometry( .25, .25, .5, 20 );
+const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+window.b = new THREE.Mesh(smallBoxG, redMaterial);
+window.b.position.set(2,0,0);
+window.T = THREE;
+window.s = scene;
+scene.add(window.b);
+
 const meshes = blocks.reduce((meshes, block, i) => {
 // const meshes = blocks.map((block, i) => {
   const {size, pos, name} = block;
@@ -22,6 +31,13 @@ const meshes = blocks.reduce((meshes, block, i) => {
   const parentGroup = new THREE.Group();
   parentGroup.position.set(pos.x, pos.y, 0);
   parentGroup.name = 'g' + name;
+
+  // const smallRed = new THREE.Mesh(smallBoxG, redMaterial);
+  const smallRedAxis = new THREE.Mesh(smallCylG, redMaterial);
+  smallRedAxis.position.set(0,0,0);
+  smallRedAxis.rotation.z = Math.PI/2;
+  smallRedAxis.name =  'a' + name;
+  parentGroup.add(smallRedAxis);
 
   const geometry = new THREE.BoxGeometry(size.w, size.h, depth);
   const material = new THREE.MeshPhongMaterial({ color: colors[i % blocks.length] });
@@ -71,10 +87,35 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(-1, 2, 0);
 controls.update();
 
+function rotateAroundPoint(mesh, rotationPoint, quaternion, scene) {
+  const group = new THREE.Group();
+  group.position.copy(rotationPoint);
+  const diff = new THREE.Vector3();
+  diff.sub(group.position)
+  scene.add(group);
+  group.add(mesh);
+  mesh.position.add(diff);
+
+  group.quaternion.multiply(quaternion);
+  const newPosition = new THREE.Vector3();
+  mesh.getWorldPosition(newPosition);
+
+  scene.add(b);
+  b.position.copy(newPosition);
+}
+
 // cuboidT3a.rotation.y = 0.3;
 function animate() {
   renderer.render( scene, camera );
-  c2.parent.quaternion.multiply(q2);
-  ct3a.parent.quaternion.multiply(q2);
+  //ok...
+  // c2.position.x +=2
+  // c2.position.x +=1
+  // c2.position.x -=3
+  // c2.parent.quaternion.multiply(q);
+  // ct3a.parent.quaternion.multiply(q2);
+  // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q, scene);
 }
 renderer.setAnimationLoop( animate );
+
+
+window.r = rotateAroundPoint;
