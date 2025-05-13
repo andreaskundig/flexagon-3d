@@ -87,22 +87,52 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(-1, 2, 0);
 controls.update();
 
-function rotateAroundPoint(mesh, rotationPoint, quaternion, scene) {
-  const group = new THREE.Group();
-  group.position.copy(rotationPoint);
+function addMeshToGroup0(mesh, group) {
+  // add mesh to group
   const diff = new THREE.Vector3();
   diff.sub(group.position)
   scene.add(group);
   group.add(mesh);
   mesh.position.add(diff);
+}
 
-  group.quaternion.multiply(quaternion);
+function addMeshToGroup(mesh, group) {
+  const initialPosition = new THREE.Vector3();
+  mesh.getWorldPosition(initialPosition);
+  // console.log('initialPosition', initialPosition);
+  const localPosition = initialPosition.clone();
+  group.worldToLocal(localPosition);
+  // console.log('localPosition', localPosition);
+  group.add(mesh);
+  mesh.position.copy(localPosition);
+}
+
+function removeMeshFromGroup(mesh, scene) {
   const newPosition = new THREE.Vector3();
   mesh.getWorldPosition(newPosition);
-
+  // console.log('newPosition', newPosition);
   scene.add(b);
   b.position.copy(newPosition);
 }
+
+function rotateAroundPoint(mesh, rotationPoint, quaternion, scene) {
+  const previousGroup = mesh.parent;
+  const group = new THREE.Group();
+  group.position.copy(rotationPoint);
+  addMeshToGroup(mesh, group);
+  group.quaternion.multiply(quaternion);
+  if(previousGroup) {
+    addMeshToGroup(mesh, previousGroup);
+  }else{
+    removeMeshFromGroup(mesh, scene);
+  }
+  mesh.quaternion.multiply(quaternion);
+}
+// clone the quaternion
+const q2inv = q2.clone();
+q2inv.invert();
+const axisPoint = new THREE.Vector3(0, 0, 0);
+c2.parent.getWorldPosition(axisPoint);
 
 // cuboidT3a.rotation.y = 0.3;
 function animate() {
@@ -111,11 +141,9 @@ function animate() {
   // c2.position.x +=2
   // c2.position.x +=1
   // c2.position.x -=3
-  // c2.parent.quaternion.multiply(q);
+  c2.parent.quaternion.multiply(q2);
   // ct3a.parent.quaternion.multiply(q2);
-  // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q, scene);
+  // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
+  rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
 }
 renderer.setAnimationLoop( animate );
-
-
-window.r = rotateAroundPoint;
