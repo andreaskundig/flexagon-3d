@@ -15,6 +15,28 @@ const blocks = [
   {name: '2', size: {w: width, h:2}, pos:{x:0, y:-4}}
 ]
 
+const blockBenchBoxes = [
+  {vertical: "true", size: 4, name: "u1"},
+  {vertical: "true", size: 2, name: "u1_2"},
+  {vertical: "true", size: 4, name: "u2"},
+  {vertical: "true", size: 1, name: "u2_3"},
+  {vertical: "true", size: 2, name: "u3"},
+  {vertical: "true", size: 1, name: "u3_4"},
+  {vertical: "true", size: 4, name: "u4"},
+  {vertical: "true", size: 2, name: "u4_5"},
+  {vertical: "true", size: 3, name: "u5"},
+  {vertical: "false", size: 2, name: "u5_6"},
+  {vertical: "false", size: 3, name: "u6"},
+  {vertical: "false", size: 1, name: "u6_7"},
+  {vertical: "false", size: 2, name: "u7"},
+  {vertical: "false", size: 1, name: "u7_8"},
+  {vertical: "false", size: 4, name: "u8"},
+  {vertical: "false", size: 1, name: "u8_9"},
+  {vertical: "false", size: 2, name: "u9"},
+  {vertical: "false", size: 1, name: "u9_10"}
+];
+
+
 const smallBoxG = new THREE.BoxGeometry(.5, .5, .5);
 const smallCylG = new THREE.CylinderGeometry( .25, .25, .5, 20 );
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
@@ -137,13 +159,10 @@ c2.parent.getWorldPosition(axisPoint);
 // cuboidT3a.rotation.y = 0.3;
 function animate() {
   renderer.render( scene, camera );
-  //ok...
-  // c2.position.x +=2
-  // c2.position.x +=1
-  // c2.position.x -=3
-  c2.parent.quaternion.multiply(q2);
   // ct3a.parent.quaternion.multiply(q2);
   // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
-  rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
+
+  // c2.parent.quaternion.multiply(q2);
+  // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
 }
 renderer.setAnimationLoop( animate );
