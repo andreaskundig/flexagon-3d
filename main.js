@@ -16,25 +16,38 @@ const blocks = [
 ]
 
 const blockBenchBoxes = [
-  {vertical: "true", size: 4, name: "u1"},
-  {vertical: "true", size: 2, name: "u1_2"},
-  {vertical: "true", size: 4, name: "u2"},
-  {vertical: "true", size: 1, name: "u2_3"},
-  {vertical: "true", size: 2, name: "u3"},
-  {vertical: "true", size: 1, name: "u3_4"},
-  {vertical: "true", size: 4, name: "u4"},
-  {vertical: "true", size: 2, name: "u4_5"},
-  {vertical: "true", size: 3, name: "u5"},
-  {vertical: "false", size: 2, name: "u5_6"},
-  {vertical: "false", size: 3, name: "u6"},
-  {vertical: "false", size: 1, name: "u6_7"},
-  {vertical: "false", size: 2, name: "u7"},
-  {vertical: "false", size: 1, name: "u7_8"},
-  {vertical: "false", size: 4, name: "u8"},
-  {vertical: "false", size: 1, name: "u8_9"},
-  {vertical: "false", size: 2, name: "u9"},
-  {vertical: "false", size: 1, name: "u9_10"}
+  {vertical: true, size: 4, name: "u1"},
+  {vertical: true, size: 2, name: "u1_2"},
+  {vertical: true, size: 4, name: "u2"},
+  {vertical: true, size: 1, name: "u2_3"},
+  {vertical: true, size: 2, name: "u3"},
+  {vertical: true, size: 1, name: "u3_4"},
+  {vertical: true, size: 4, name: "u4"},
+  {vertical: true, size: 2, name: "u4_5"},
+  {vertical: true, size: 3, name: "u5"},
+  {vertical: false, size: 2, name: "u5_6"},
+  {vertical: false, size: 3, name: "u6"},
+  {vertical: false, size: 1, name: "u6_7"},
+  {vertical: false, size: 2, name: "u7"},
+  {vertical: false, size: 1, name: "u7_8"},
+  {vertical: false, size: 4, name: "u8"},
+  {vertical: false, size: 1, name: "u8_9"},
+  {vertical: false, size: 2, name: "u9"},
+  {vertical: false, size: 1, name: "u9_10"}
 ];
+const blocks1 = blockBenchBoxes
+      .reduce((blocks, box, i) => {
+        const previousBlock = i > 0 ? blocks[i - 1] : null;
+        if (box.vertical) {
+          const pos = { x: 0, y: previousBlock ? - previousBlock.size.h : 0 };
+          blocks.push({ ...box, size: { w: width, h: box.size }, pos });
+        }else{
+          const pos = { x: previousBlock ? box.size : 0, y: 0 };
+          blocks.push({ ...box, size: { w: box.size, h: width }, pos });
+        }
+        return blocks;
+},[]);
+
 
 
 const smallBoxG = new THREE.BoxGeometry(.5, .5, .5);
@@ -46,37 +59,46 @@ window.T = THREE;
 window.s = scene;
 scene.add(window.b);
 
-const meshes = blocks.reduce((meshes, block, i) => {
-// const meshes = blocks.map((block, i) => {
-  const {size, pos, name} = block;
 
-  const parentGroup = new THREE.Group();
-  parentGroup.position.set(pos.x, pos.y, 0);
-  parentGroup.name = 'g' + name;
+function posToString(pos) {
+  return `[${pos.x} ${pos.y} ${pos.z}]`;
+}
 
-  // const smallRed = new THREE.Mesh(smallBoxG, redMaterial);
-  const smallRedAxis = new THREE.Mesh(smallCylG, redMaterial);
-  smallRedAxis.position.set(0,0,0);
-  smallRedAxis.rotation.z = Math.PI/2;
-  smallRedAxis.name =  'a' + name;
-  parentGroup.add(smallRedAxis);
+const displayBlocks = (blocks1) =>
+  blocks1.reduce((meshes, block, i) => {
+    const { size, pos, name, vertical } = block;
 
-  const geometry = new THREE.BoxGeometry(size.w, size.h, depth);
-  const material = new THREE.MeshPhongMaterial({ color: colors[i % blocks.length] });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(-size.w/2, -size.h/2, 0);
-  mesh.name = 'c' + name;
+    const parentGroup = new THREE.Group();
+    parentGroup.position.set(pos.x, pos.y, 0);
+    parentGroup.name = 'g' + name;
 
-  parentGroup.add(mesh);
+    // const smallRed = new THREE.Mesh(smallBoxG, redMaterial);
+    const smallRedAxis = new THREE.Mesh(smallCylG, redMaterial);
+    smallRedAxis.position.set(0, 0, 0);
+    smallRedAxis.rotation.z = Math.PI / 2;
+    smallRedAxis.name = 'a' + name;
+    parentGroup.add(smallRedAxis);
 
-  const previousMesh = meshes[meshes.length - 1];
+    const geometry = new THREE.BoxGeometry(size.w, size.h, depth);
+    const material = new THREE.MeshPhongMaterial({ color: colors[i % blocks.length] });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(-size.w / 2, -size.h / 2, 0);
+    mesh.name = 'c' + name;
 
-  scene.add(parentGroup);
-  // only works if added after scene.add
-  previousMesh?.parent.add(mesh.parent);
-  meshes.push(mesh);
-  return meshes;
-}, []);
+    parentGroup.add(mesh);
+
+    const previousMesh = meshes[meshes.length - 1];
+
+    scene.add(parentGroup);
+    // only works if added after scene.add
+    previousMesh?.parent.add(mesh.parent);
+    meshes.push(mesh);
+
+    console.log(`S [${size.w} ${size.h}] P ${posToString(parentGroup.position)} M ${posToString(mesh.position)}`);
+    return meshes;
+  }, []);
+
+const meshes = displayBlocks(blocks1);
 
 window.ms = meshes;
 meshes.forEach(mesh => window[mesh.name] = mesh);
