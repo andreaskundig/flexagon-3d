@@ -49,7 +49,7 @@ const blocks = blockBenchBoxes
         const sizeAdjustment = fold ? depth : 1
         const m = {};
         const g = {}
-        if(i === 0){
+        if(i === 0){ // first block
           g.pos = { x: -totalHeight/2, y:  totalHeight/2 + gOffset  };
           m.size = { w: width, h: box.size }
           m.pos = [m.size.w / 2, -m.size.h / 2 + mOffset];
@@ -57,10 +57,14 @@ const blocks = blockBenchBoxes
           g.pos = { x: 0, y:  -previousBlock.m.size.h + gOffset };
           m.size = { w: width, h: box.size * sizeAdjustment };
           m.pos = [m.size.w / 2, -m.size.h / 2 + mOffset];
-        }else{
-          const gy = previousBlock.vertical ? -depth/2 : 0;
-          const gOffsetAdjusted = previousBlock.vertical ? gOffset/2 : gOffset;
+        }else if(previousBlock.vertical){ // corner
+          const gy = -depth/2 ;
+          const gOffsetAdjusted = gOffset/2;
           g.pos = { x: previousBlock.m.size.w - gOffsetAdjusted , y: gy };
+          m.size = { w: box.size * sizeAdjustment , h: width };
+          m.pos = [m.size.w / 2 - mOffset, -m.size.h / 2];
+        }else{
+          g.pos = { x: previousBlock.m.size.w - gOffset , y: 0 };
           m.size = { w: box.size * sizeAdjustment , h: width };
           m.pos = [m.size.w / 2 - mOffset, -m.size.h / 2];
         }
