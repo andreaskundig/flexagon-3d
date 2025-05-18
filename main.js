@@ -39,7 +39,9 @@ const blockBenchBoxes = [
   {vertical: false, size: 1, name: "u9_10"}
 ];
 const totalHeight = blockBenchBoxes.reduce(
-  (total, box) => total + (box.vertical ? box.size : 0), 0);
+  (total, box, i) =>
+  total + (box.vertical ? box.size : 0) * (i%2 ? thickness : 1),
+  0);
 const blocks = blockBenchBoxes
       .reduce((blocks, box, i) => {
         const previousBlock = i == 0 ? undefined : blocks[i - 1];
@@ -69,7 +71,7 @@ const blocks = blockBenchBoxes
             g.pos = [previousBlock.m.size.w + gOffset, 0];
           }
         }
-        blocks.push({ ...box, m, g, fold});
+        blocks.push({ ...box, m, g});
         return blocks;
 },[]);
 g.bs = blocks
@@ -83,7 +85,7 @@ function posToString(pos) {
 const boxMaterials = colors.map(c => new THREE.MeshPhongMaterial({ color: c }));
 const displayBlocks = (blocks) =>
   blocks.reduce((meshes, block, i) => {
-    const { m, g, name, fold } = block;
+    const { m, g, name } = block;
 
     const parentGroup = new THREE.Group();
     parentGroup.position.set(...g.pos, 0);
@@ -110,7 +112,7 @@ const displayBlocks = (blocks) =>
     meshes.push(mesh);
 
     const sizeString = [m.size.w, m.size.h].map(s => s.toFixed(1)).join(' ');
-    console.log(`${name}\tf${fold?1:0} S[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
+    console.log(`${name}\tS[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
     return meshes;
   }, []);
 
@@ -124,8 +126,17 @@ const qvert = new THREE.Quaternion();
 qvert.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/50);
 g.qvert = qvert;
 const qv90 = new THREE.Quaternion();
-qv90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
+qv90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
 g.qv90 = qv90;
+const qvm90 = new THREE.Quaternion();
+qvm90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
+g.qvm90 = qvm90;
+const qh90 = new THREE.Quaternion();
+qh90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2);
+g.qh90 = qh90;
+const qhm90 = new THREE.Quaternion();
+qhm90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
+g.qhm90 = qhm90;
 const qhori = new THREE.Quaternion();
 qhori.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/50);
 g.qhori = qhori;
@@ -134,7 +145,7 @@ q2.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/200);
 g.q2 = q2;
 
 const c2 = meshes[1];
-c2.parent.quaternion.multiply(qvert);
+// c2.parent.quaternion.multiply(qvert);
 
 const color = 0xFFFFFF;
 const intensity = 3;
@@ -210,9 +221,23 @@ function animate() {
 }
 renderer.setAnimationLoop( animate );
 
+
+
 function exposeObjectToWindow(obj) {
   Object.keys(obj).forEach(key => {
     window[key] = obj[key];
   });
 }
 exposeObjectToWindow(g);
+
+ms[1].parent.quaternion.multiply(qv90)
+ms[2].parent.quaternion.multiply(qvm90)
+ms[3].parent.quaternion.multiply(qvm90)
+ms[5].parent.quaternion.multiply(qvm90)
+ms[7].parent.quaternion.multiply(qvm90)
+ms[8].parent.quaternion.multiply(qvm90)
+ms[9].parent.quaternion.multiply(qhm90)
+ms[10].parent.quaternion.multiply(qhm90)
+ms[11].parent.quaternion.multiply(qhm90)
+ms[13].parent.quaternion.multiply(qhm90)
+ms[15].parent.quaternion.multiply(qhm90)
