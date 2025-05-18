@@ -14,8 +14,8 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 const width = 3;
-const depth = 0.75;
-g.d = depth;
+const thickness = 0.5;
+g.d = thickness;
 const colors = [0x00ffff,0xffff00, 0xff00ff, 0x00ff00, 0xff0000, 0x0000ff];
 
 const blockBenchBoxes = [
@@ -44,29 +44,30 @@ const blocks = blockBenchBoxes
       .reduce((blocks, box, i) => {
         const previousBlock = i == 0 ? undefined : blocks[i - 1];
         const fold = i % 2 != 0;
-        const gOffset = fold ? - depth : depth;
+        const gOffset = fold ?  thickness : -thickness;
         const mOffset = - gOffset / 2;
-        const sizeAdjustment = fold ? depth : 1
+        const sizeAdjustment = fold ? thickness : 1
         const m = {};
         const g = {}
-        if(i === 0){ // first block
-          g.pos = { x: -totalHeight/2, y:  totalHeight/2 + gOffset  };
-          m.size = { w: width, h: box.size }
-          m.pos = [m.size.w / 2, -m.size.h / 2 + mOffset];
-        }else if (box.vertical) {
-          g.pos = { x: 0, y:  -previousBlock.m.size.h + gOffset };
+
+        if (box.vertical) {
           m.size = { w: width, h: box.size * sizeAdjustment };
-          m.pos = [m.size.w / 2, -m.size.h / 2 + mOffset];
-        }else if(previousBlock.vertical){ // corner
-          const gy = -depth/2 ;
-          const gOffsetAdjusted = gOffset/2;
-          g.pos = { x: previousBlock.m.size.w - gOffsetAdjusted , y: gy };
+          m.pos = [m.size.w / 2, m.size.h / 2 + mOffset];
+          if (!previousBlock) { //first block
+            g.pos = [-totalHeight / 2, -totalHeight / 2 + gOffset];
+          } else {
+            g.pos = [0, previousBlock.m.size.h + gOffset];
+          }
+        } else {
           m.size = { w: box.size * sizeAdjustment , h: width };
-          m.pos = [m.size.w / 2 - mOffset, -m.size.h / 2];
-        }else{
-          g.pos = { x: previousBlock.m.size.w - gOffset , y: 0 };
-          m.size = { w: box.size * sizeAdjustment , h: width };
-          m.pos = [m.size.w / 2 - mOffset, -m.size.h / 2];
+          m.pos = [m.size.w / 2 + mOffset, -m.size.h / 2];
+          if (previousBlock.vertical) { // corner block
+            g.pos = [
+              previousBlock.m.size.w + gOffset / 2,
+              previousBlock.m.size.h + gOffset / 2];
+          } else {
+            g.pos = [previousBlock.m.size.w + gOffset, 0];
+          }
         }
         blocks.push({ ...box, m, g, fold});
         return blocks;
@@ -76,7 +77,7 @@ const smallSphereG = new THREE.SphereGeometry( .25);
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
 
 function posToString(pos) {
-  return `[${pos.x} ${pos.y} ${pos.z}]`;
+  return `[${[pos.x, pos.y, pos.z].map(n => n.toFixed(1)).join(' ')}]`;
 }
 
 const boxMaterials = colors.map(c => new THREE.MeshPhongMaterial({ color: c }));
@@ -85,7 +86,7 @@ const displayBlocks = (blocks) =>
     const { m, g, name, fold } = block;
 
     const parentGroup = new THREE.Group();
-    parentGroup.position.set(g.pos.x, g.pos.y, 0);
+    parentGroup.position.set(...g.pos, 0);
     parentGroup.name = 'g' + name;
 
     const smallRedSphere = new THREE.Mesh(smallSphereG, redMaterial);
@@ -94,7 +95,7 @@ const displayBlocks = (blocks) =>
     smallRedSphere.name = 'a' + name;
     parentGroup.add(smallRedSphere);
 
-    const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, depth);
+    const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
     const mesh = new THREE.Mesh(boxGeometry, boxMaterials[i%2]);
     mesh.position.set(...m.pos, 0);
     mesh.name = name;
@@ -108,7 +109,8 @@ const displayBlocks = (blocks) =>
     previousMesh?.parent.add(mesh.parent);
     meshes.push(mesh);
 
-    console.log(`${name}\tf${fold?1:0} S[${m.size.w} ${m.size.h}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
+    const sizeString = [m.size.w, m.size.h].map(s => s.toFixed(1)).join(' ');
+    console.log(`${name}\tf${fold?1:0} S[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
     return meshes;
   }, []);
 
