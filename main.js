@@ -22,21 +22,15 @@ const blockBenchBoxes = [
   {vertical: true, size: 4, name: "u1"},
   {vertical: true, size: 2, name: "u1_2"},
   {vertical: true, size: 4, name: "u2"},
-  {vertical: true, size: 1, name: "u2_3"},
-  {vertical: true, size: 2, name: "u3"},
-  {vertical: true, size: 1, name: "u3_4"},
+  {vertical: true, size: 4, name: "u3"},
   {vertical: true, size: 4, name: "u4"},
   {vertical: true, size: 2, name: "u4_5"},
   {vertical: true, size: 3, name: "u5"},
   {vertical: false, size: 2, name: "u5_6"},
   {vertical: false, size: 3, name: "u6"},
-  {vertical: false, size: 1, name: "u6_7"},
-  {vertical: false, size: 2, name: "u7"},
-  {vertical: false, size: 1, name: "u7_8"},
+  {vertical: false, size: 4, name: "u7"},
   {vertical: false, size: 4, name: "u8"},
-  {vertical: false, size: 1, name: "u8_9"},
-  {vertical: false, size: 2, name: "u9"},
-  {vertical: false, size: 1, name: "u9_10"}
+  {vertical: false, size: 4, name: "u9"}
 ];
 const totalHeight = blockBenchBoxes.reduce(
   (total, box, i) =>
@@ -233,11 +227,11 @@ exposeObjectToWindow(g);
 ms[1].parent.quaternion.multiply(qv90)
 ms[2].parent.quaternion.multiply(qvm90)
 ms[3].parent.quaternion.multiply(qvm90)
+ms[4].parent.quaternion.multiply(qvm90)
 ms[5].parent.quaternion.multiply(qvm90)
-ms[7].parent.quaternion.multiply(qvm90)
-ms[8].parent.quaternion.multiply(qvm90)
+ms[6].parent.quaternion.multiply(qvm90)
+ms[7].parent.quaternion.multiply(qhm90)
+ms[8].parent.quaternion.multiply(qhm90)
 ms[9].parent.quaternion.multiply(qhm90)
 ms[10].parent.quaternion.multiply(qhm90)
 ms[11].parent.quaternion.multiply(qhm90)
-ms[13].parent.quaternion.multiply(qhm90)
-ms[15].parent.quaternion.multiply(qhm90)
