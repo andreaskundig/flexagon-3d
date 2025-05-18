@@ -1,8 +1,14 @@
 import * as THREE from 'three';
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 
+const g = {}; //globals
+const scene = new THREE.Scene();
+g.T = THREE;
+g.s = scene;
+const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+g.c = camera;
+
+camera.position.set(0,0,25)
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
@@ -10,10 +16,6 @@ document.body.appendChild( renderer.domElement );
 const width = 3;
 const depth = 0.75;
 const colors = [0x00ffff,0xffff00, 0xff00ff, 0x00ff00, 0xff0000, 0x0000ff];
-const blocks = [
-  {name: 't3a', size: {w: width, h:4}, pos:{x:0, y:0}},
-  {name: '2', size: {w: width, h:2}, pos:{x:0, y:-4}}
-]
 
 const blockBenchBoxes = [
   {vertical: true, size: 4, name: "u1"},
@@ -35,14 +37,21 @@ const blockBenchBoxes = [
   {vertical: false, size: 2, name: "u9"},
   {vertical: false, size: 1, name: "u9_10"}
 ];
-const blocks1 = blockBenchBoxes
+const totalHeight = blockBenchBoxes.reduce(
+  (total, box) => total + (box.vertical ? box.size : 0), 0);
+const blocks = blockBenchBoxes
       .reduce((blocks, box, i) => {
-        const previousBlock = i > 0 ? blocks[i - 1] : null;
+        if(i === 0){
+          const pos = { x: -totalHeight/2, y:  totalHeight/2 };
+          blocks.push({ ...box, size: { w: width, h: box.size }, pos });
+          return blocks;
+        }
+        const previousBlock = blocks[i - 1];
         if (box.vertical) {
-          const pos = { x: 0, y: previousBlock ? - previousBlock.size.h : 0 };
+          const pos = { x: 0, y:  - previousBlock.size.h };
           blocks.push({ ...box, size: { w: width, h: box.size }, pos });
         }else{
-          const pos = { x: previousBlock ? box.size : 0, y: 0 };
+          const pos = { x: previousBlock.size.w, y: 0 };
           blocks.push({ ...box, size: { w: box.size, h: width }, pos });
         }
         return blocks;
@@ -52,38 +61,36 @@ const blocks1 = blockBenchBoxes
 
 const smallBoxG = new THREE.BoxGeometry(.5, .5, .5);
 const smallCylG = new THREE.CylinderGeometry( .25, .25, .5, 20 );
+const smallSphereG = new THREE.SphereGeometry( .25);
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-window.b = new THREE.Mesh(smallBoxG, redMaterial);
-window.b.position.set(2,0,0);
-window.T = THREE;
-window.s = scene;
-scene.add(window.b);
+g.b = new THREE.Mesh(smallBoxG, redMaterial);
+g.b.position.set(0,0,0);
+scene.add(g.b);
 
 
 function posToString(pos) {
   return `[${pos.x} ${pos.y} ${pos.z}]`;
 }
 
+const boxMaterials = colors.map(c => new THREE.MeshPhongMaterial({ color: c }));
 const displayBlocks = (blocks1) =>
   blocks1.reduce((meshes, block, i) => {
-    const { size, pos, name, vertical } = block;
+    const { size, pos, name } = block;
 
     const parentGroup = new THREE.Group();
     parentGroup.position.set(pos.x, pos.y, 0);
     parentGroup.name = 'g' + name;
 
-    // const smallRed = new THREE.Mesh(smallBoxG, redMaterial);
-    const smallRedAxis = new THREE.Mesh(smallCylG, redMaterial);
-    smallRedAxis.position.set(0, 0, 0);
-    smallRedAxis.rotation.z = Math.PI / 2;
-    smallRedAxis.name = 'a' + name;
-    parentGroup.add(smallRedAxis);
+    const smallRedSphere = new THREE.Mesh(smallSphereG, redMaterial);
+    smallRedSphere.position.set(0, 0, 0);
+    smallRedSphere.rotation.z = Math.PI / 2;
+    smallRedSphere.name = 'a' + name;
+    parentGroup.add(smallRedSphere);
 
-    const geometry = new THREE.BoxGeometry(size.w, size.h, depth);
-    const material = new THREE.MeshPhongMaterial({ color: colors[i % blocks.length] });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(-size.w / 2, -size.h / 2, 0);
-    mesh.name = 'c' + name;
+    const boxGeometry = new THREE.BoxGeometry(size.w, size.h, depth);
+    const mesh = new THREE.Mesh(boxGeometry, boxMaterials[i%2]);
+    mesh.position.set(size.w / 2, -size.h / 2, 0);
+    mesh.name = name;
 
     parentGroup.add(mesh);
 
@@ -94,25 +101,28 @@ const displayBlocks = (blocks1) =>
     previousMesh?.parent.add(mesh.parent);
     meshes.push(mesh);
 
-    console.log(`S [${size.w} ${size.h}] P ${posToString(parentGroup.position)} M ${posToString(mesh.position)}`);
+    console.log(`${name}\tS[${size.w} ${size.h}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
     return meshes;
   }, []);
 
-const meshes = displayBlocks(blocks1);
+const meshes = displayBlocks(blocks);
 
-window.ms = meshes;
+g.ms = meshes;
 meshes.forEach(mesh => window[mesh.name] = mesh);
 
 // use a quaternion to rotate the second block 45%
-const q = new THREE.Quaternion();
-q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/50);
-window.q = q;
+const qvert = new THREE.Quaternion();
+qvert.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/50);
+g.qvert = qvert;
+const qhori = new THREE.Quaternion();
+qhori.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/50);
+g.qhori = qhori;
 const q2 = new THREE.Quaternion();
 q2.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/200);
-window.q2 = q2;
+g.q2 = q2;
 
 const c2 = meshes[1];
-c2.parent.quaternion.multiply(q);
+c2.parent.quaternion.multiply(qvert);
 
 const color = 0xFFFFFF;
 const intensity = 3;
@@ -125,7 +135,6 @@ const ambIntensity = 1;
 const amblight = new THREE.AmbientLight(ambColor, ambIntensity);
 scene.add(amblight);
 
-camera.position.z = 15;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(-1, 2, 0);
@@ -188,3 +197,10 @@ function animate() {
   // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
 }
 renderer.setAnimationLoop( animate );
+
+function exposeObjectToWindow(obj) {
+  Object.keys(obj).forEach(key => {
+    window[key] = obj[key];
+  });
+}
+exposeObjectToWindow(g);
