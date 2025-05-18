@@ -15,6 +15,7 @@ document.body.appendChild( renderer.domElement );
 
 const width = 3;
 const depth = 0.75;
+g.d = depth;
 const colors = [0x00ffff,0xffff00, 0xff00ff, 0x00ff00, 0xff0000, 0x0000ff];
 
 const blockBenchBoxes = [
@@ -41,44 +42,46 @@ const totalHeight = blockBenchBoxes.reduce(
   (total, box) => total + (box.vertical ? box.size : 0), 0);
 const blocks = blockBenchBoxes
       .reduce((blocks, box, i) => {
+        const previousBlock = i == 0 ? undefined : blocks[i - 1];
+        const fold = i % 2 != 0;
+        const gOffset = fold ? - depth : depth;
+        const mOffset = - gOffset / 2;
+        const sizeAdjustment = fold ? depth : 1
+        const m = {};
+        const g = {}
         if(i === 0){
-          const pos = { x: -totalHeight/2, y:  totalHeight/2 };
-          blocks.push({ ...box, size: { w: width, h: box.size }, pos });
-          return blocks;
-        }
-        const previousBlock = blocks[i - 1];
-        if (box.vertical) {
-          const pos = { x: 0, y:  - previousBlock.size.h };
-          blocks.push({ ...box, size: { w: width, h: box.size }, pos });
+          g.pos = { x: -totalHeight/2, y:  totalHeight/2 + gOffset  };
+          m.size = { w: width, h: box.size }
+          m.pos = [m.size.w / 2, -m.size.h / 2 + mOffset];
+        }else if (box.vertical) {
+          g.pos = { x: 0, y:  -previousBlock.m.size.h + gOffset };
+          m.size = { w: width, h: box.size * sizeAdjustment };
+          m.pos = [m.size.w / 2, -m.size.h / 2 + mOffset];
         }else{
-          const pos = { x: previousBlock.size.w, y: 0 };
-          blocks.push({ ...box, size: { w: box.size, h: width }, pos });
+          const gy = previousBlock.vertical ? -depth/2 : 0;
+          const gOffsetAdjusted = previousBlock.vertical ? gOffset/2 : gOffset;
+          g.pos = { x: previousBlock.m.size.w - gOffsetAdjusted , y: gy };
+          m.size = { w: box.size * sizeAdjustment , h: width };
+          m.pos = [m.size.w / 2 - mOffset, -m.size.h / 2];
         }
+        blocks.push({ ...box, m, g, fold});
         return blocks;
 },[]);
-
-
-
-const smallBoxG = new THREE.BoxGeometry(.5, .5, .5);
-const smallCylG = new THREE.CylinderGeometry( .25, .25, .5, 20 );
+g.bs = blocks
 const smallSphereG = new THREE.SphereGeometry( .25);
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-g.b = new THREE.Mesh(smallBoxG, redMaterial);
-g.b.position.set(0,0,0);
-scene.add(g.b);
-
 
 function posToString(pos) {
   return `[${pos.x} ${pos.y} ${pos.z}]`;
 }
 
 const boxMaterials = colors.map(c => new THREE.MeshPhongMaterial({ color: c }));
-const displayBlocks = (blocks1) =>
-  blocks1.reduce((meshes, block, i) => {
-    const { size, pos, name } = block;
+const displayBlocks = (blocks) =>
+  blocks.reduce((meshes, block, i) => {
+    const { m, g, name, fold } = block;
 
     const parentGroup = new THREE.Group();
-    parentGroup.position.set(pos.x, pos.y, 0);
+    parentGroup.position.set(g.pos.x, g.pos.y, 0);
     parentGroup.name = 'g' + name;
 
     const smallRedSphere = new THREE.Mesh(smallSphereG, redMaterial);
@@ -87,9 +90,9 @@ const displayBlocks = (blocks1) =>
     smallRedSphere.name = 'a' + name;
     parentGroup.add(smallRedSphere);
 
-    const boxGeometry = new THREE.BoxGeometry(size.w, size.h, depth);
+    const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, depth);
     const mesh = new THREE.Mesh(boxGeometry, boxMaterials[i%2]);
-    mesh.position.set(size.w / 2, -size.h / 2, 0);
+    mesh.position.set(...m.pos, 0);
     mesh.name = name;
 
     parentGroup.add(mesh);
@@ -101,7 +104,7 @@ const displayBlocks = (blocks1) =>
     previousMesh?.parent.add(mesh.parent);
     meshes.push(mesh);
 
-    console.log(`${name}\tS[${size.w} ${size.h}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
+    console.log(`${name}\tf${fold?1:0} S[${m.size.w} ${m.size.h}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
     return meshes;
   }, []);
 
@@ -114,6 +117,9 @@ meshes.forEach(mesh => window[mesh.name] = mesh);
 const qvert = new THREE.Quaternion();
 qvert.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/50);
 g.qvert = qvert;
+const qv90 = new THREE.Quaternion();
+qv90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
+g.qv90 = qv90;
 const qhori = new THREE.Quaternion();
 qhori.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/50);
 g.qhori = qhori;
