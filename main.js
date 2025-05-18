@@ -69,7 +69,7 @@ const blocks = blockBenchBoxes
         return blocks;
 },[]);
 g.bs = blocks
-const smallSphereG = new THREE.SphereGeometry( .25);
+const smallSphereG = new THREE.SphereGeometry( .1);
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
 
 function posToString(pos) {
