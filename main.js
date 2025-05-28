@@ -18,62 +18,131 @@ const thickness = 0.5;
 g.d = thickness;
 const colors = [0x00ffff,0xffff00, 0xff00ff, 0x00ff00, 0xff0000, 0x0000ff];
 
-const blockBenchBoxes = [
-  {vertical: true, size: 4, name: "u1"},
-  {vertical: true, size: 2, name: "u1_2"},
-  {vertical: true, size: 4, name: "u2"},
-  {vertical: true, size: 4, name: "u3"},
-  {vertical: true, size: 4, name: "u4"},
-  {vertical: true, size: 2, name: "u4_5"},
-  {vertical: true, size: 3, name: "u5"},
-  {vertical: false, size: 2, name: "u5_6"},
-  {vertical: false, size: 3, name: "u6"},
-  {vertical: false, size: 4, name: "u7"},
-  {vertical: false, size: 4, name: "u8"},
-  {vertical: false, size: 4, name: "u9"}
+const blockBenchBoxes1 = [
+  {vertical: true,  size: 4, angle:   0, name: "u1"},
+  {vertical: true,  size: 2, angle:  90, name: "u1_2"},
+  {vertical: true,  size: 4, angle: -90, name: "u2"},
+  {vertical: true,  size: 4, angle: -90, name: "u3"},
+  {vertical: true,  size: 4, angle: -90, name: "u4"},
+  {vertical: true,  size: 2, angle: -90, name: "u4_5"},
+  {vertical: true,  size: 3, angle: -90, name: "u5"},
+  {vertical: false, size: 2, angle: -90, name: "u5_6"},
+  {vertical: false, size: 3, angle: -90, name: "u6"},
+  {vertical: false, size: 4, angle: -90, name: "u7"},
+  {vertical: false, size: 4, angle: -90, name: "u8"},
+  {vertical: false, size: 4, angle: -90, name: "u9"}
 ];
+
+const blockBenchBoxes0 = [
+  {vertical: true,  size: 4, angle:   0, name: "u1"},
+  {vertical: true,  size: 2, angle:  90, name: "u1_2"},
+  {vertical: true,  size: 4, angle: -90, name: "u2"},
+  {vertical: true,  size: 1, angle: -90, name: "u2_3"},
+  {vertical: true,  size: 2, angle:   0, name: "u3"},
+  {vertical: true,  size: 1, angle: -90, name: "u3_4"},
+  {vertical: true,  size: 4, angle:   0, name: "u4"},
+  {vertical: true,  size: 2, angle: -90, name: "u4_5"},
+  {vertical: true,  size: 3, angle: -90, name: "u5"},
+  {vertical: false, size: 2, angle: -90, name: "u5_6"},
+  {vertical: false, size: 3, angle: -90, name: "u6"},
+  {vertical: false, size: 1, angle: -90, name: "u6_7"},
+  {vertical: false, size: 2, angle:   0, name: "u7"},
+  {vertical: false, size: 1, angle: -90, name: "u7_8"},
+  {vertical: false, size: 4, angle:   0, name: "u8"},
+  {vertical: false, size: 1, angle: -90, name: "u8_9"},
+  {vertical: false, size: 2, angle:   0, name: "u9"},
+  {vertical: false, size: 1, angle:   0, name: "u9_10"}
+];
+
+angle: 90
+angle: -90
+angle: -90
+angle: 0
+angle: -90
+angle: 0
+angle: -90
+angle: -90
+angle: -90
+angle: -90
+angle: -90
+angle: 0
+angle: -90
+angle: 0
+angle: -90
+
+const blockBenchBoxes = blockBenchBoxes1;
+
 const totalHeight = blockBenchBoxes.reduce(
   (total, box, i) =>
   total + (box.vertical ? box.size : 0) * (i%2 ? thickness : 1),
   0);
-const blocks = blockBenchBoxes
-      .reduce((blocks, box, i) => {
-        const previousBlock = i == 0 ? undefined : blocks[i - 1];
-        const fold = i % 2 != 0;
-        const gOffset = fold ?  thickness : -thickness;
-        const mOffset = - gOffset / 2;
-        const sizeAdjustment = fold ? thickness : 1
-        const m = {};
-        const g = {}
+const initialXY = [-totalHeight / 2, -totalHeight / 2];
+function createBlocks(blockBenchBoxes, initialXY){
+  return blockBenchBoxes
+    .reduce((blocks, box, i) => {
+      const previousBlock = i == 0 ? undefined : blocks[i - 1];
+      const fold = i % 2 != 0;
+      const gOffset = fold ? thickness : -thickness;
+      const mOffset = - gOffset / 2;
+      const sizeAdjustment = fold ? thickness : 1
+      const m = {};
+      const g = {}
 
-        if (box.vertical) {
-          m.size = { w: width, h: box.size * sizeAdjustment };
-          m.pos = [m.size.w / 2, m.size.h / 2 + mOffset];
-          if (!previousBlock) { //first block
-            g.pos = [-totalHeight / 2, -totalHeight / 2 + gOffset];
-          } else {
-            g.pos = [0, previousBlock.m.size.h + gOffset];
-          }
+      if (box.vertical) {
+        m.size = { w: width, h: box.size * sizeAdjustment };
+        m.pos = [m.size.w / 2, m.size.h / 2 + mOffset];
+        if (!previousBlock) { //first block
+          // g.pos = [-totalHeight / 2, -totalHeight / 2 + gOffset];
+          g.pos = initialXY;
         } else {
-          m.size = { w: box.size * sizeAdjustment , h: width };
-          m.pos = [m.size.w / 2 + mOffset, -m.size.h / 2];
-          if (previousBlock.vertical) { // corner block
-            g.pos = [
-              previousBlock.m.size.w + gOffset / 2,
-              previousBlock.m.size.h + gOffset / 2];
-          } else {
-            g.pos = [previousBlock.m.size.w + gOffset, 0];
-          }
+          g.pos = [0, previousBlock.m.size.h + gOffset];
         }
-        blocks.push({ ...box, m, g});
-        return blocks;
-},[]);
-g.bs = blocks
+      } else {
+        m.size = { w: box.size * sizeAdjustment, h: width };
+        m.pos = [m.size.w / 2 + mOffset, -m.size.h / 2];
+        if (previousBlock.vertical) { // corner block
+          g.pos = [
+            previousBlock.m.size.w + gOffset / 2,
+            previousBlock.m.size.h + gOffset / 2];
+        } else {
+          g.pos = [previousBlock.m.size.w + gOffset, 0];
+        }
+      }
+      blocks.push({ ...box, m, g });
+      return blocks;
+    }, []);
+}
+g.create = createBlocks;
+g.bs = createBlocks(blockBenchBoxes, initialXY);
+
 const smallSphereG = new THREE.SphereGeometry( .1);
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
 
 function posToString(pos) {
   return `[${[pos.x, pos.y, pos.z].map(n => n.toFixed(1)).join(' ')}]`;
+}
+
+const qv90 = new THREE.Quaternion();
+qv90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
+g.qv90 = qv90;
+const qvm90 = new THREE.Quaternion();
+qvm90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
+g.qvm90 = qvm90;
+const qh90 = new THREE.Quaternion();
+qh90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2);
+g.qh90 = qh90;
+const qhm90 = new THREE.Quaternion();
+qhm90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
+g.qhm90 = qhm90;
+
+function determineQuaternion({angle, vertical}) {
+  if (!angle) {
+    return null;
+  } else if(vertical){
+    return angle > 0 ? qv90 : qvm90;
+  }else{
+    return angle > 0 ? qh90 : qhm90;
+  }
 }
 
 const boxMaterials = colors.map(c => new THREE.MeshPhongMaterial({ color: c }));
@@ -96,6 +165,8 @@ const displayBlocks = (blocks) =>
     mesh.position.set(...m.pos, 0);
     mesh.name = name;
 
+    mesh.userData.quat = determineQuaternion(block);
+
     parentGroup.add(mesh);
 
     const previousMesh = meshes[meshes.length - 1];
@@ -110,30 +181,12 @@ const displayBlocks = (blocks) =>
     return meshes;
   }, []);
 
-const meshes = displayBlocks(blocks);
+const meshes = displayBlocks(g.bs);
 
 g.ms = meshes;
 meshes.forEach(mesh => window[mesh.name] = mesh);
 
 // use a quaternion to rotate the second block 45%
-const qvert = new THREE.Quaternion();
-qvert.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/50);
-g.qvert = qvert;
-const qv90 = new THREE.Quaternion();
-qv90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
-g.qv90 = qv90;
-const qvm90 = new THREE.Quaternion();
-qvm90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
-g.qvm90 = qvm90;
-const qh90 = new THREE.Quaternion();
-qh90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2);
-g.qh90 = qh90;
-const qhm90 = new THREE.Quaternion();
-qhm90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
-g.qhm90 = qhm90;
-const qhori = new THREE.Quaternion();
-qhori.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/50);
-g.qhori = qhori;
 const q2 = new THREE.Quaternion();
 q2.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/200);
 g.q2 = q2;
@@ -204,18 +257,36 @@ q2inv.invert();
 const axisPoint = new THREE.Vector3(0, 0, 0);
 c2.parent.getWorldPosition(axisPoint);
 
-// cuboidT3a.rotation.y = 0.3;
-function animate() {
-  renderer.render( scene, camera );
-  // ct3a.parent.quaternion.multiply(q2);
-  // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
 
-  // c2.parent.quaternion.multiply(q2);
-  // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
+function fold1(ms) {
+  ms[1].parent.quaternion.multiply(qv90)
+  ms[2].parent.quaternion.multiply(qvm90)
+  ms[3].parent.quaternion.multiply(qvm90)
+  ms[4].parent.quaternion.multiply(qvm90)
+  ms[5].parent.quaternion.multiply(qvm90)
+  ms[6].parent.quaternion.multiply(qvm90)
+  ms[7].parent.quaternion.multiply(qhm90)
+  ms[8].parent.quaternion.multiply(qhm90)
+  ms[9].parent.quaternion.multiply(qhm90)
+  ms[10].parent.quaternion.multiply(qhm90)
+  ms[11].parent.quaternion.multiply(qhm90)
 }
-renderer.setAnimationLoop( animate );
 
-
+function fold(ms) {
+  ms[1].parent.quaternion.multiply(qv90)
+  ms[2].parent.quaternion.multiply(qvm90)
+  ms[3].parent.quaternion.multiply(qvm90)
+  ms[5].parent.quaternion.multiply(qvm90)
+  ms[7].parent.quaternion.multiply(qvm90)
+  ms[8].parent.quaternion.multiply(qvm90)
+  ms[9].parent.quaternion.multiply(qhm90)
+  ms[10].parent.quaternion.multiply(qhm90)
+  ms[11].parent.quaternion.multiply(qhm90)
+  ms[13].parent.quaternion.multiply(qhm90)
+  ms[15].parent.quaternion.multiply(qhm90)
+}
+g.fold1 = fold1;
+g.fold = fold;
 
 function exposeObjectToWindow(obj) {
   Object.keys(obj).forEach(key => {
@@ -223,15 +294,33 @@ function exposeObjectToWindow(obj) {
   });
 }
 exposeObjectToWindow(g);
-
-ms[1].parent.quaternion.multiply(qv90)
-ms[2].parent.quaternion.multiply(qvm90)
-ms[3].parent.quaternion.multiply(qvm90)
-ms[4].parent.quaternion.multiply(qvm90)
-ms[5].parent.quaternion.multiply(qvm90)
-ms[6].parent.quaternion.multiply(qvm90)
-ms[7].parent.quaternion.multiply(qhm90)
-ms[8].parent.quaternion.multiply(qhm90)
-ms[9].parent.quaternion.multiply(qhm90)
-ms[10].parent.quaternion.multiply(qhm90)
-ms[11].parent.quaternion.multiply(qhm90)
+const animationStart = Date.now();
+// const start = Date.now();
+// const in5secs = start + 5000;
+// cuboidT3a.rotation.y = 0.3;
+function animate() {
+  renderer.render( scene, camera );
+  // ct3a.parent.quaternion.multiply(q2);
+  // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
+  const now = Date.now();
+  const animDuration = 5000;
+  for(let i=0; i<meshes.length; i++){
+    const start = i * animDuration + animationStart;
+    const end = start + animDuration;
+    const mesh = meshes[i];
+    const quat = mesh.userData.quat;
+    if(quat && start < now && now < end) {
+      console.log(i)
+      mesh.parent.quaternion.slerp(quat, (now - start) / animDuration);
+    }
+  } 
+  // const fraction = (now - start) / 5000
+  // if(fraction < 1){
+  //    c2.parent.quaternion.slerp(qv90, fraction);
+  // }
+  // if (now < in5secs) {
+  //    c2.parent.quaternion.multiply(q2);
+  // }
+  // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
+}
+renderer.setAnimationLoop( animate );
