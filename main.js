@@ -294,23 +294,35 @@ function exposeObjectToWindow(obj) {
   });
 }
 exposeObjectToWindow(g);
+function formatEpoch(epoch){
+  const date = new Date(epoch);
+  return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+}
 const animationStart = Date.now();
-// const start = Date.now();
-// const in5secs = start + 5000;
-// cuboidT3a.rotation.y = 0.3;
+const animDuration = 2000;
+function addIntervals(meshes, animationStart, animationDuration) {
+  let start = animationStart;
+  for (let mesh of meshes) {
+    if (mesh.userData.quat) {
+      const end = start + animationDuration
+      mesh.userData.start = start;
+      mesh.userData.end = end;
+      console.log(formatEpoch(start), formatEpoch(end));
+      start = end;
+    }
+  }
+}
+addIntervals(meshes, animationStart, animDuration);
+
 function animate() {
   renderer.render( scene, camera );
   // ct3a.parent.quaternion.multiply(q2);
   // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
   const now = Date.now();
-  const animDuration = 5000;
-  for(let i=0; i<meshes.length; i++){
-    const start = i * animDuration + animationStart;
-    const end = start + animDuration;
-    const mesh = meshes[i];
+  for (let mesh of meshes) {
+    const { start, end } = mesh.userData;
     const quat = mesh.userData.quat;
     if(quat && start < now && now < end) {
-      console.log(i)
       mesh.parent.quaternion.slerp(quat, (now - start) / animDuration);
     }
   } 
