@@ -293,46 +293,69 @@ function exposeObjectToWindow(obj) {
     window[key] = obj[key];
   });
 }
-exposeObjectToWindow(g);
 function formatEpoch(epoch){
   const date = new Date(epoch);
   return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
 }
 const animationStart = Date.now();
 const animDuration = 2000;
-function addIntervals(meshes, animationStart, animationDuration) {
-  let start = animationStart;
-  for (let mesh of meshes) {
-    if (mesh.userData.quat) {
-      const end = start + animationDuration
-      mesh.userData.start = start;
-      mesh.userData.end = end;
-      console.log(formatEpoch(start), formatEpoch(end));
-      start = end;
-    }
+// function addIntervals(meshes, animationStart, animationDuration) {
+//   let start = animationStart;
+//   for (let mesh of meshes) {
+//     if (mesh.userData.quat) {
+//       const end = start + animationDuration
+//       mesh.userData.start = start;
+//       mesh.userData.end = end;
+//       console.log(formatEpoch(start), formatEpoch(end));
+//       start = end;
+//     }
+//   }
+// }
+// addIntervals(meshes, animationStart, animDuration);
+
+class RotateMesh {
+  constructor(mesh, start, duration){
+    [this.mesh, this.start, this.duration] = [mesh, start, duration];
+    this.end = start + duration;
+    console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
+  }
+  active(now){
+    const active =  this.start < now && now < this.end;
+    if (!active) { console.log('inactive'); }
+    return active;
+  }
+  done(now) { return this.end < now; }
+  animate(now){
+    if (!this.active(now)) { return; }
+    const completion = (now - this.start) / this.duration;
+    const quat = this.mesh.userData.quat;
+    this.mesh.parent.quaternion.slerp(quat, completion);
   }
 }
-addIntervals(meshes, animationStart, animDuration);
+g.RM = RotateMesh
+function makeAnimations(meshes, animationStart, animationDuration) {
+  let start = animationStart;
+  return meshes.filter(m => !!m.userData.quat)
+    .map(m => {
+      const anim = new RotateMesh(m, start, animationDuration);
+      start = anim.end;
+      return anim;
+    });
+}
+const animations = makeAnimations(meshes, animationStart, animDuration);
+
+g.anims = {remaining: animations};
+// g.anims = {remaining: []};
 
 function animate() {
   renderer.render( scene, camera );
   // ct3a.parent.quaternion.multiply(q2);
   // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
   const now = Date.now();
-  for (let mesh of meshes) {
-    const { start, end } = mesh.userData;
-    const quat = mesh.userData.quat;
-    if(quat && start < now && now < end) {
-      mesh.parent.quaternion.slerp(quat, (now - start) / animDuration);
-    }
-  } 
-  // const fraction = (now - start) / 5000
-  // if(fraction < 1){
-  //    c2.parent.quaternion.slerp(qv90, fraction);
-  // }
-  // if (now < in5secs) {
-  //    c2.parent.quaternion.multiply(q2);
-  // }
+  const { remaining } = g.anims;
+  remaining.forEach(a => a.animate(now));
+  g.anims.remaining = remaining.filter(a => !a.done(now));
   // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
 }
 renderer.setAnimationLoop( animate );
+exposeObjectToWindow(g);
