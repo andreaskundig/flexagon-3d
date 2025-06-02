@@ -312,7 +312,14 @@ class RotateMesh {
     if (!this.active(now)) { return; }
     const lastTime = this.lastTime || this.start;
     const runningTime = lastTime - this.start;
-    const fractionToInterpolate = (now - lastTime) / (this.duration - runningTime);
+    let fractionToInterpolate = (now - lastTime) / (this.duration - runningTime);
+    if (fractionToInterpolate > 0.5) {
+      // If all steps take the same time
+      // and the current step covers > 0.5 of remaining time
+      // the next step will come after the end of the duration and be ignored.
+      // So this is the last step and needs to end up at the target angle.
+      fractionToInterpolate = 1;
+    }
     const quat = this.mesh.userData.quat;
     this.mesh.parent.quaternion.slerp(quat, fractionToInterpolate);
     this.lastTime = now;
