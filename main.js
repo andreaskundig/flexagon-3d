@@ -307,22 +307,20 @@ class RotateMesh {
     console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
   }
   active(now){ return this.start < now && now < this.end; }
-  done(now) { return this.end < now; }
+  done(now) { return this._done; }
   animate(now){
-    if (!this.active(now)) { return; }
-    const lastTime = this.lastTime || this.start;
-    const runningTime = lastTime - this.start;
-    let fractionToInterpolate = (now - lastTime) / (this.duration - runningTime);
-    if (fractionToInterpolate > 0.5) {
-      // If all steps take the same time
-      // and the current step covers > 0.5 of remaining time
-      // the next step will come after the end of the duration and be ignored.
-      // So this is the last step and needs to end up at the target angle.
-      fractionToInterpolate = 1;
+    if (this.active(now)) {
+      const lastTime = this.lastTime || this.start;
+      const runningTime = lastTime - this.start;
+      const fractionToInterpolate = (now - lastTime) / (this.duration - runningTime);
+      const quat = this.mesh.userData.quat;
+      this.mesh.parent.quaternion.slerp(quat, fractionToInterpolate);
+      this.lastTime = now;
+    } else if (this.end < now && !this._done){
+      const quat = this.mesh.userData.quat;
+      this.mesh.parent.quaternion.slerp(quat, 1);
+      this._done = true;
     }
-    const quat = this.mesh.userData.quat;
-    this.mesh.parent.quaternion.slerp(quat, fractionToInterpolate);
-    this.lastTime = now;
   }
 }
 g.RM = RotateMesh
