@@ -299,19 +299,6 @@ function formatEpoch(epoch){
 }
 const animationStart = Date.now();
 const animDuration = 2000;
-// function addIntervals(meshes, animationStart, animationDuration) {
-//   let start = animationStart;
-//   for (let mesh of meshes) {
-//     if (mesh.userData.quat) {
-//       const end = start + animationDuration
-//       mesh.userData.start = start;
-//       mesh.userData.end = end;
-//       console.log(formatEpoch(start), formatEpoch(end));
-//       start = end;
-//     }
-//   }
-// }
-// addIntervals(meshes, animationStart, animDuration);
 
 class RotateMesh {
   constructor(mesh, start, duration){
@@ -319,17 +306,16 @@ class RotateMesh {
     this.end = start + duration;
     console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
   }
-  active(now){
-    const active =  this.start < now && now < this.end;
-    if (!active) { console.log('inactive'); }
-    return active;
-  }
+  active(now){ return this.start < now && now < this.end; }
   done(now) { return this.end < now; }
   animate(now){
     if (!this.active(now)) { return; }
-    const completion = (now - this.start) / this.duration;
+    const lastTime = this.lastTime || this.start;
+    const runningTime = lastTime - this.start;
+    const fractionToInterpolate = (now - lastTime) / (this.duration - runningTime);
     const quat = this.mesh.userData.quat;
-    this.mesh.parent.quaternion.slerp(quat, completion);
+    this.mesh.parent.quaternion.slerp(quat, fractionToInterpolate);
+    this.lastTime = now;
   }
 }
 g.RM = RotateMesh
