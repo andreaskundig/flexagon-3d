@@ -298,7 +298,7 @@ function formatEpoch(epoch){
   return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
 }
 const animationStart = Date.now();
-const animDuration = 2000;
+const animDuration = 5000;
 
 class RotateMesh {
   constructor(mesh, start, duration){
@@ -324,29 +324,46 @@ class RotateMesh {
   }
 }
 g.RM = RotateMesh
-function makeAnimations(meshes, animationStart, animationDuration) {
+// defaults are recalculated at every function call
+function makeAnimations(meshes, animationDuration=2000, animationStart=Date.now()) {
   let start = animationStart;
   return meshes.filter(m => !!m.userData.quat)
     .map(m => {
       const anim = new RotateMesh(m, start, animationDuration);
-      start = anim.end;
+      // uncomment to animate one after the other
+      // start = anim.end;
       return anim;
     });
 }
-const animations = makeAnimations(meshes, animationStart, animDuration);
-
-g.anims = {remaining: animations};
-// g.anims = {remaining: []};
-
+g.makeAnimations = makeAnimations;
+g.animationQueue = [];
+// g.animations = makeAnimations(meshes, animDuration, animationStart);
+function runAnimations(animationQueue){
+  const now = Date.now();
+  let i = animationQueue.length;
+  while(i--){
+    const animation = animationQueue[i];
+    animation.animate(now);
+    if(animation.done(now)){
+      animationQueue.splice(i,1);
+    }
+  }
+}
+g.runAnimations = runAnimations
+// To run animations:
+// makeAnimations(ms).forEach(a => animationQueue.push(a))
 function animate() {
   renderer.render( scene, camera );
   // ct3a.parent.quaternion.multiply(q2);
   // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
-  const now = Date.now();
-  const { remaining } = g.anims;
-  remaining.forEach(a => a.animate(now));
-  g.anims.remaining = remaining.filter(a => !a.done(now));
+  runAnimations(g.animationQueue);
   // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
 }
 renderer.setAnimationLoop( animate );
 exposeObjectToWindow(g);
+
+// TODO calculate width and height
+// TODO grow some blocks
+// ms[9].parent.position.x += 1
+// ms[8].position.x += 0.5
+// ms[8].geometry.scale(4/3,1,1)
