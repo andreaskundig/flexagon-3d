@@ -3,10 +3,10 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 
 const g = {}; //globals
 const scene = new THREE.Scene();
-g.T = THREE;
-g.s = scene;
+g.THREE = THREE;
+g.scene = scene;
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-g.c = camera;
+g.camera = camera;
 
 camera.position.set(0,0,25)
 const renderer = new THREE.WebGLRenderer();
@@ -17,6 +17,7 @@ const width = 3;
 const thickness = 0.5;
 g.d = thickness;
 const colors = [0x00ffff,0xffff00, 0xff00ff, 0x00ff00, 0xff0000, 0x0000ff];
+const colorStrings = ['#00ffff','#ffff00', '#ff00ff', '#00ff00', '#ff0000', '#0000ff'];
 
 const blockBenchBoxes1 = [
   {vertical: true,  size: 4, angle:   0, name: "u1"},
@@ -71,7 +72,7 @@ angle: 0
 angle: -90
 
 const blockBenchBoxes = blockBenchBoxes1;
-
+g.boxes = blockBenchBoxes;
 const totalHeight = blockBenchBoxes.reduce(
   (total, box, i) =>
   total + (box.vertical ? box.size : 0) * (i%2 ? thickness : 1),
@@ -145,7 +146,19 @@ function determineQuaternion({angle, vertical}) {
   }
 }
 
-const boxMaterials = colors.map(c => new THREE.MeshPhongMaterial({ color: c }));
+function makeTextMaterial(color, text){
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.canvas.width = 100;
+  ctx.canvas.height = 100;
+  ctx.fillStyle = ''+color;
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.font = "30px Arial";
+  ctx.fillStyle = 'black';
+  ctx.fillText(text, 5, 35);
+  const texture = new THREE.CanvasTexture(ctx.canvas);
+  return new THREE.MeshPhongMaterial({ map: texture });
+}
+
 const displayBlocks = (blocks) =>
   blocks.reduce((meshes, block, i) => {
     const { m, g, name } = block;
@@ -161,7 +174,8 @@ const displayBlocks = (blocks) =>
     parentGroup.add(smallRedSphere);
 
     const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
-    const mesh = new THREE.Mesh(boxGeometry, boxMaterials[i%2]);
+    const mesh = new THREE.Mesh(boxGeometry,
+                                makeTextMaterial(colorStrings[i%2], name));
     mesh.position.set(...m.pos, 0);
     mesh.name = name;
 
