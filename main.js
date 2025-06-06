@@ -314,6 +314,30 @@ function runAnimations(animationQueue){
   }
 }
 g.runAnimations = runAnimations
+
+// TODO calculate width and height
+// TODO grow some blocks
+// ms[9].parent.position.x += 1
+// ms[8].position.x += 0.5
+// ms[8].geometry.scale(4/3,1,1)
+function resizeMesh(m,xyz){
+  const [x,y,z] = xyz;
+  const diffs = {x:x, y:y, z:z};
+  const subgroup = m.parent.children.find(c=>c.type==='Group');
+  ['x','y','z'].forEach(dim =>{
+    if (subgroup) {
+      subgroup.position[dim] += diffs[dim];
+    }
+    m.position[dim] += diffs[dim] / 2;
+  });
+  m.geometry.computeBoundingBox();
+  const {min, max} = m.geometry.boundingBox;
+  const scaleFactors = ['x','y','z'].map(dim => 1 + diffs[dim]/(max[dim]-min[dim]));
+  console.log(scaleFactors);
+  m.geometry.scale(...scaleFactors);
+}
+g.resizeMesh = resizeMesh;
+
 // To run animations:
 // makeAnimations(ms).forEach(a => animationQueue.push(a))
 function animate() {
@@ -324,10 +348,5 @@ function animate() {
   // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
 }
 renderer.setAnimationLoop( animate );
-exposeObjectToWindow(g);
 
-// TODO calculate width and height
-// TODO grow some blocks
-// ms[9].parent.position.x += 1
-// ms[8].position.x += 0.5
-// ms[8].geometry.scale(4/3,1,1)
+exposeObjectToWindow(g);
