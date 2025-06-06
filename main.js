@@ -55,22 +55,6 @@ const blockBenchBoxes0 = [
   {vertical: false, size: 1, angle:   0, name: "u9_10"}
 ];
 
-angle: 90
-angle: -90
-angle: -90
-angle: 0
-angle: -90
-angle: 0
-angle: -90
-angle: -90
-angle: -90
-angle: -90
-angle: -90
-angle: 0
-angle: -90
-angle: 0
-angle: -90
-
 const blockBenchBoxes = blockBenchBoxes1;
 g.boxes = blockBenchBoxes;
 const totalHeight = blockBenchBoxes.reduce(
@@ -136,7 +120,7 @@ const qhm90 = new THREE.Quaternion();
 qhm90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
 g.qhm90 = qhm90;
 
-function determineQuaternion({angle, vertical}) {
+function determineQuaternion(angle, vertical) {
   if (!angle) {
     return null;
   } else if(vertical){
@@ -146,15 +130,15 @@ function determineQuaternion({angle, vertical}) {
   }
 }
 
-function makeTextMaterial(color, text){
+function makeTextMaterial(color, text, ratio=1){
   const ctx = document.createElement('canvas').getContext('2d');
-  ctx.canvas.width = 100;
-  ctx.canvas.height = 100;
+  ctx.canvas.width = 100 ;
+  ctx.canvas.height = 100 / ratio;
   ctx.fillStyle = ''+color;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.font = "30px Arial";
   ctx.fillStyle = 'black';
-  ctx.fillText(text, 5, 35);
+  ctx.fillText(text, 1, 35);
   const texture = new THREE.CanvasTexture(ctx.canvas);
   return new THREE.MeshPhongMaterial({ map: texture });
 }
@@ -174,12 +158,13 @@ const displayBlocks = (blocks) =>
     parentGroup.add(smallRedSphere);
 
     const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
-    const mesh = new THREE.Mesh(boxGeometry,
-                                makeTextMaterial(colorStrings[i%2], name));
+    const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
+      colorStrings[i % 2], name, m.size.w / m.size.h));
     mesh.position.set(...m.pos, 0);
     mesh.name = name;
 
-    mesh.userData.quat = determineQuaternion(block);
+    mesh.userData.angle = block.angle;
+    mesh.userData.vertical = block.vertical;
 
     parentGroup.add(mesh);
 
@@ -271,37 +256,6 @@ q2inv.invert();
 const axisPoint = new THREE.Vector3(0, 0, 0);
 c2.parent.getWorldPosition(axisPoint);
 
-
-function fold1(ms) {
-  ms[1].parent.quaternion.multiply(qv90)
-  ms[2].parent.quaternion.multiply(qvm90)
-  ms[3].parent.quaternion.multiply(qvm90)
-  ms[4].parent.quaternion.multiply(qvm90)
-  ms[5].parent.quaternion.multiply(qvm90)
-  ms[6].parent.quaternion.multiply(qvm90)
-  ms[7].parent.quaternion.multiply(qhm90)
-  ms[8].parent.quaternion.multiply(qhm90)
-  ms[9].parent.quaternion.multiply(qhm90)
-  ms[10].parent.quaternion.multiply(qhm90)
-  ms[11].parent.quaternion.multiply(qhm90)
-}
-
-function fold(ms) {
-  ms[1].parent.quaternion.multiply(qv90)
-  ms[2].parent.quaternion.multiply(qvm90)
-  ms[3].parent.quaternion.multiply(qvm90)
-  ms[5].parent.quaternion.multiply(qvm90)
-  ms[7].parent.quaternion.multiply(qvm90)
-  ms[8].parent.quaternion.multiply(qvm90)
-  ms[9].parent.quaternion.multiply(qhm90)
-  ms[10].parent.quaternion.multiply(qhm90)
-  ms[11].parent.quaternion.multiply(qhm90)
-  ms[13].parent.quaternion.multiply(qhm90)
-  ms[15].parent.quaternion.multiply(qhm90)
-}
-g.fold1 = fold1;
-g.fold = fold;
-
 function exposeObjectToWindow(obj) {
   Object.keys(obj).forEach(key => {
     window[key] = obj[key];
@@ -311,12 +265,9 @@ function formatEpoch(epoch){
   const date = new Date(epoch);
   return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
 }
-const animationStart = Date.now();
-const animDuration = 5000;
-
 class RotateMesh {
-  constructor(mesh, start, duration){
-    [this.mesh, this.start, this.duration] = [mesh, start, duration];
+  constructor(mesh, start, duration, quat){
+    [this.mesh, this.start, this.duration, this.quat] = [mesh, start, duration, quat];
     this.end = start + duration;
     console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
   }
@@ -327,12 +278,10 @@ class RotateMesh {
       const lastTime = this.lastTime || this.start;
       const runningTime = lastTime - this.start;
       const fractionToInterpolate = (now - lastTime) / (this.duration - runningTime);
-      const quat = this.mesh.userData.quat;
-      this.mesh.parent.quaternion.slerp(quat, fractionToInterpolate);
+      this.mesh.parent.quaternion.slerp(this.quat, fractionToInterpolate);
       this.lastTime = now;
     } else if (this.end < now && !this._done){
-      const quat = this.mesh.userData.quat;
-      this.mesh.parent.quaternion.slerp(quat, 1);
+      this.mesh.parent.quaternion.slerp(this.quat, 1);
       this._done = true;
     }
   }
@@ -341,9 +290,10 @@ g.RM = RotateMesh
 // defaults are recalculated at every function call
 function makeAnimations(meshes, animationDuration=2000, animationStart=Date.now()) {
   let start = animationStart;
-  return meshes.filter(m => !!m.userData.quat)
+  return meshes.filter(m => !!m.userData.angle)
     .map(m => {
-      const anim = new RotateMesh(m, start, animationDuration);
+      const quat = determineQuaternion(m.userData.angle, m.userData.vertical);
+      const anim = new RotateMesh(m, start, animationDuration, quat);
       // uncomment to animate one after the other
       // start = anim.end;
       return anim;
