@@ -107,12 +107,18 @@ function posToString(pos) {
   return `[${[pos.x, pos.y, pos.z].map(n => n.toFixed(1)).join(' ')}]`;
 }
 
+const qv0 = new THREE.Quaternion();
+qv0.setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0);
+g.qv0 = qv0;
 const qv90 = new THREE.Quaternion();
 qv90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
 g.qv90 = qv90;
 const qvm90 = new THREE.Quaternion();
 qvm90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
 g.qvm90 = qvm90;
+const qh0 = new THREE.Quaternion();
+qh0.setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
+g.qh0 = qh0;
 const qh90 = new THREE.Quaternion();
 qh90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2);
 g.qh90 = qh90;
@@ -121,12 +127,14 @@ qhm90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
 g.qhm90 = qhm90;
 
 function determineQuaternion(angle, vertical) {
-  if (!angle) {
+  if (isNaN(angle)) {
     return null;
-  } else if(vertical){
-    return angle > 0 ? qv90 : qvm90;
+  } else if(angle===0) {
+    return vertical ? qv0: qh0;
+  } else if(angle > 0){
+    return vertical ? qv90 : qh90;
   }else{
-    return angle > 0 ? qh90 : qhm90;
+    return vertical ? qvm90 : qhm90;
   }
 }
 
@@ -266,7 +274,7 @@ function formatEpoch(epoch){
   return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
 }
 class RotateMesh {
-  constructor(mesh, start, duration, quat){
+  constructor(mesh, quat, duration=1000, start=Date.now()){
     [this.mesh, this.start, this.duration, this.quat] = [mesh, start, duration, quat];
     this.end = start + duration;
     console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
@@ -288,12 +296,13 @@ class RotateMesh {
 }
 g.RM = RotateMesh
 // defaults are recalculated at every function call
-function makeAnimations(meshes, animationDuration=2000, animationStart=Date.now()) {
+function makeAnimations(meshes, angleMultiplier=1, animationDuration=2000, animationStart=Date.now()) {
   let start = animationStart;
   return meshes.filter(m => !!m.userData.angle)
     .map(m => {
-      const quat = determineQuaternion(m.userData.angle, m.userData.vertical);
-      const anim = new RotateMesh(m, start, animationDuration, quat);
+      const quat = determineQuaternion(m.userData.angle * angleMultiplier,
+                                       m.userData.vertical);
+      const anim = new RotateMesh(m, quat, animationDuration, start);
       // uncomment to animate one after the other
       // start = anim.end;
       return anim;
@@ -301,7 +310,6 @@ function makeAnimations(meshes, animationDuration=2000, animationStart=Date.now(
 }
 g.makeAnimations = makeAnimations;
 g.animationQueue = [];
-// g.animations = makeAnimations(meshes, animDuration, animationStart);
 function runAnimations(animationQueue){
   const now = Date.now();
   let i = animationQueue.length;
@@ -315,11 +323,6 @@ function runAnimations(animationQueue){
 }
 g.runAnimations = runAnimations
 
-// TODO calculate width and height
-// TODO grow some blocks
-// ms[9].parent.position.x += 1
-// ms[8].position.x += 0.5
-// ms[8].geometry.scale(4/3,1,1)
 function resizeMesh(m,xyz){
   const [x,y,z] = xyz;
   const diffs = {x:x, y:y, z:z};
@@ -339,7 +342,10 @@ function resizeMesh(m,xyz){
 g.resizeMesh = resizeMesh;
 
 // To run animations:
+// fold
 // makeAnimations(ms).forEach(a => animationQueue.push(a))
+// unfold
+// makeAnimations(ms,0).forEach(a => animationQueue.push(a))
 function animate() {
   renderer.render( scene, camera );
   // ct3a.parent.quaternion.multiply(q2);
