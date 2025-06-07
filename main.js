@@ -13,11 +13,11 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-const width = 3;
-const thickness = 0.5;
-g.d = thickness;
-const colors = [0x00ffff,0xffff00, 0xff00ff, 0x00ff00, 0xff0000, 0x0000ff];
-const colorStrings = ['#00ffff','#ffff00', '#ff00ff', '#00ff00', '#ff0000', '#0000ff'];
+const WIDTH = 3;
+g.WIDTH = WIDTH;
+const THICKNESS = 0.5;
+g.THICKNESS = THICKNESS;
+const COLORS = ['#00ffff','#ffff00', '#ff00ff', '#00ff00', '#ff0000', '#0000ff'];
 
 const blockBenchBoxes1 = [
   {vertical: true,  size: 4, angle:   0, name: "u1"},
@@ -57,16 +57,19 @@ const blockBenchBoxes0 = [
 
 const blockBenchBoxes = blockBenchBoxes1;
 g.boxes = blockBenchBoxes;
+
 const totalHeight = blockBenchBoxes.reduce(
   (total, box, i) =>
-  total + (box.vertical ? box.size : 0) * (i%2 ? thickness : 1),
+  total + (box.vertical ? box.size : 0) * (i%2 ? THICKNESS : 1),
   0);
 const initialXY = [-totalHeight / 2, -totalHeight / 2];
-function createBlocks(blockBenchBoxes, initialXY){
+
+function createBlocks(blockBenchBoxes, width=WIDTH, thickness=THICKNESS){
   return blockBenchBoxes
     .reduce((blocks, box, i) => {
       const previousBlock = i == 0 ? undefined : blocks[i - 1];
       const fold = i % 2 != 0;
+      // if it's a fold, axis is on the group, else it's before the group
       const gOffset = fold ? thickness : -thickness;
       const mOffset = - gOffset / 2;
       const sizeAdjustment = fold ? thickness : 1
@@ -76,12 +79,8 @@ function createBlocks(blockBenchBoxes, initialXY){
       if (box.vertical) {
         m.size = { w: width, h: box.size * sizeAdjustment };
         m.pos = [m.size.w / 2, m.size.h / 2 + mOffset];
-        if (!previousBlock) { //first block
-          // g.pos = [-totalHeight / 2, -totalHeight / 2 + gOffset];
-          g.pos = initialXY;
-        } else {
-          g.pos = [0, previousBlock.m.size.h + gOffset];
-        }
+        const gy = previousBlock ? previousBlock.m.size.h + gOffset : 0;
+        g.pos = [0, gy];
       } else {
         m.size = { w: box.size * sizeAdjustment, h: width };
         m.pos = [m.size.w / 2 + mOffset, -m.size.h / 2];
@@ -98,7 +97,7 @@ function createBlocks(blockBenchBoxes, initialXY){
     }, []);
 }
 g.create = createBlocks;
-g.bs = createBlocks(blockBenchBoxes, initialXY);
+g.bs = createBlocks(blockBenchBoxes);
 
 const smallSphereG = new THREE.SphereGeometry( .1);
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
@@ -146,12 +145,12 @@ function makeTextMaterial(color, text, ratio=1){
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.font = "30px Arial";
   ctx.fillStyle = 'black';
-  ctx.fillText(text, 1, 35);
+  ctx.fillText(text, 1, 28);
   const texture = new THREE.CanvasTexture(ctx.canvas);
   return new THREE.MeshPhongMaterial({ map: texture });
 }
 
-const displayBlocks = (blocks) =>
+const displayBlocks = (blocks, thickness=THICKNESS, colors=COLORS) =>
   blocks.reduce((meshes, block, i) => {
     const { m, g, name } = block;
 
@@ -167,7 +166,7 @@ const displayBlocks = (blocks) =>
 
     const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
     const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
-      colorStrings[i % 2], name, m.size.w / m.size.h));
+      colors[i % 2], name, m.size.w / m.size.h));
     mesh.position.set(...m.pos, 0);
     mesh.name = name;
 
@@ -189,9 +188,14 @@ const displayBlocks = (blocks) =>
   }, []);
 
 const meshes = displayBlocks(g.bs);
+meshes.forEach(mesh => g[mesh.name] = mesh);
 
+const theGroup = new THREE.Group();
+theGroup.position.set(...initialXY, 0);
+theGroup.add(meshes[0].parent);
+scene.add(theGroup);
 g.ms = meshes;
-meshes.forEach(mesh => window[mesh.name] = mesh);
+
 
 // use a quaternion to rotate the second block 45%
 const q2 = new THREE.Quaternion();
@@ -277,7 +281,7 @@ class RotateMesh {
   constructor(mesh, quat, duration=1000, start=Date.now()){
     [this.mesh, this.start, this.duration, this.quat] = [mesh, start, duration, quat];
     this.end = start + duration;
-    console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
+    // console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
   }
   active(now){ return this.start < now && now < this.end; }
   done(now) { return this._done; }
@@ -346,6 +350,19 @@ g.resizeMesh = resizeMesh;
 // makeAnimations(ms).forEach(a => animationQueue.push(a))
 // unfold
 // makeAnimations(ms,0).forEach(a => animationQueue.push(a))
+
+function calculateSize(meshes, width=WIDTH, thickness=THICKNESS){
+  return meshes.map(m=>m.parent.position).reduce((a,p)=>{
+    a[0]+=p.x;
+    a[1]+=p.y;
+    return a;
+  }, [width - thickness/2, -thickness/2]);
+}
+g.calculateSize = calculateSize;
+
+//one way to get the right size
+// [u1,u2,u4].forEach(m=>resizeMesh(m,[0,-1,0]))
+
 function animate() {
   renderer.render( scene, camera );
   // ct3a.parent.quaternion.multiply(q2);
