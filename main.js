@@ -18,38 +18,6 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-g.WIDTH = WIDTH;
-g.THICKNESS = THICKNESS;
-
-Object.assign(g, quaternions);
-g.blockDefinitions = blockDefinitionsShort;
-
-g.calculateBlockDimensions = calculateBlockDimensions;
-g.blockDimensions = calculateBlockDimensions(g.blockDefinitions);
-
-const meshes = createMeshes(scene, g.blockDimensions);
-g.meshes = meshes;
-meshes.forEach(mesh => g[mesh.name] = mesh);
-
-const totalHeight = g.blockDefinitions.reduce(
-  (total, box, i) =>
-  total + (box.vertical ? box.size : 0) * (i%2 ? THICKNESS : 1),
-  0);
-const initialXY = [-totalHeight / 2, -totalHeight / 2];
-
-const flexagonGroup = new THREE.Group();
-flexagonGroup.position.set(...initialXY, 0);
-flexagonGroup.add(meshes[0].parent);
-scene.add(flexagonGroup);
-
-// use a quaternion to rotate the second block 45%
-const q2 = new THREE.Quaternion();
-q2.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/200);
-g.q2 = q2;
-
-const c2 = meshes[1];
-// c2.parent.quaternion.multiply(qvert);
-
 const color = 0xFFFFFF;
 const intensity = 3;
 const light = new THREE.DirectionalLight(color, intensity);
@@ -65,6 +33,44 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(-1, 2, 0);
 controls.update();
 
+g.WIDTH = WIDTH;
+g.THICKNESS = THICKNESS;
+
+Object.assign(g, quaternions);
+g.blockDefinitions = blockDefinitionsShort;
+g.calculateBlockDimensions = calculateBlockDimensions;
+g.blockDimensions = calculateBlockDimensions(g.blockDefinitions);
+
+const meshes1 = createMeshes(scene, g.blockDimensions);
+g.meshes1 = meshes1;
+meshes1.forEach(mesh => g[mesh.name] = mesh);
+
+const meshes2 = createMeshes(
+  scene, g.blockDimensions.map(b => ({...b, name: b.name+'b'})));
+meshes2.forEach(mesh => g[mesh.name] = mesh);
+g.meshes2 = meshes2;
+g.qz180 = new THREE.Quaternion();
+g.qz180.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI);
+meshes2[0].parent.quaternion.multiply(g.qz180);
+meshes1[meshes1.length-1].add(meshes2[0].parent);
+meshes2[0].parent.position.set(4,1.75,0);
+
+const totalHeight = g.blockDefinitions.reduce(
+  (total, box, i) =>
+  total + (box.vertical ? box.size : 0) * (i%2 ? THICKNESS : 1),
+  0);
+const initialXY = [-totalHeight / 2, -totalHeight / 2];
+
+const flexagonGroup = new THREE.Group();
+flexagonGroup.position.set(...initialXY, 0);
+flexagonGroup.add(meshes1[0].parent);
+
+
+// meshes2[0].parent.position.set(18, 19.5, 0);
+
+scene.add(flexagonGroup);
+g.flexagonGroup = flexagonGroup;
+
 g.RM = RotateMesh
 g.makeAnimations = makeAnimations;
 g.animationQueue = [];
@@ -72,8 +78,7 @@ g.runAnimations = runAnimations
 g.resizeMesh = resizeMesh;
 
 // To run animations:
-g.fold = () => makeAnimations(ms).forEach(a => animationQueue.push(a));
-g.unfold = () =>  makeAnimations(ms,0).forEach(a => animationQueue.push(a))
+g.fold = (ms,am) => makeAnimations(ms,am).forEach(a => animationQueue.push(a));
 
 function calculateSize(meshes, width=WIDTH, thickness=THICKNESS){
   return meshes.map(m=>m.parent.position).reduce((a,p)=>{
@@ -96,3 +101,5 @@ function animate() {
 renderer.setAnimationLoop( animate );
 
 exposeObjectToWindow(g);
+fold(meshes1)
+fold(meshes2,-1)

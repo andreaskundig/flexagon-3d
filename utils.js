@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 
-
 function addMeshToGroup0(mesh, group) {
   // add mesh to group
   const diff = new THREE.Vector3();
