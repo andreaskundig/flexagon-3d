@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-
+import {blockDefinitionsShort, blockDefinitionsLong,
+        WIDTH, THICKNESS,
+        calculateBlockDimensions, createMeshes, resizeMesh
+       } from './flexagon.js';
+import { rotateAroundPoint, exposeObjectToWindow } from './utils.js';
+import { quaternions, RotateMesh, makeAnimations, runAnimations } from './animations.js';
 const g = {}; //globals
 const scene = new THREE.Scene();
 g.THREE = THREE;
@@ -13,189 +18,29 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-const WIDTH = 3;
 g.WIDTH = WIDTH;
-const THICKNESS = 0.5;
 g.THICKNESS = THICKNESS;
-const COLORS = ['#00ffff','#ffff00', '#ff00ff', '#00ff00', '#ff0000', '#0000ff'];
 
-const blockBenchBoxes1 = [
-  {vertical: true,  size: 4, angle:   0, name: "u1"},
-  {vertical: true,  size: 2, angle:  90, name: "u1_2"},
-  {vertical: true,  size: 4, angle: -90, name: "u2"},
-  {vertical: true,  size: 4, angle: -90, name: "u3"},
-  {vertical: true,  size: 4, angle: -90, name: "u4"},
-  {vertical: true,  size: 2, angle: -90, name: "u4_5"},
-  {vertical: true,  size: 3, angle: -90, name: "u5"},
-  {vertical: false, size: 2, angle: -90, name: "u5_6"},
-  {vertical: false, size: 3, angle: -90, name: "u6"},
-  {vertical: false, size: 4, angle: -90, name: "u7"},
-  {vertical: false, size: 4, angle: -90, name: "u8"},
-  {vertical: false, size: 4, angle: -90, name: "u9"}
-];
+Object.assign(g, quaternions);
+g.blockDefinitions = blockDefinitionsShort;
 
-const blockBenchBoxes0 = [
-  {vertical: true,  size: 4, angle:   0, name: "u1"},
-  {vertical: true,  size: 2, angle:  90, name: "u1_2"},
-  {vertical: true,  size: 4, angle: -90, name: "u2"},
-  {vertical: true,  size: 1, angle: -90, name: "u2_3"},
-  {vertical: true,  size: 2, angle:   0, name: "u3"},
-  {vertical: true,  size: 1, angle: -90, name: "u3_4"},
-  {vertical: true,  size: 4, angle:   0, name: "u4"},
-  {vertical: true,  size: 2, angle: -90, name: "u4_5"},
-  {vertical: true,  size: 3, angle: -90, name: "u5"},
-  {vertical: false, size: 2, angle: -90, name: "u5_6"},
-  {vertical: false, size: 3, angle: -90, name: "u6"},
-  {vertical: false, size: 1, angle: -90, name: "u6_7"},
-  {vertical: false, size: 2, angle:   0, name: "u7"},
-  {vertical: false, size: 1, angle: -90, name: "u7_8"},
-  {vertical: false, size: 4, angle:   0, name: "u8"},
-  {vertical: false, size: 1, angle: -90, name: "u8_9"},
-  {vertical: false, size: 2, angle:   0, name: "u9"},
-  {vertical: false, size: 1, angle:   0, name: "u9_10"}
-];
+g.calculateBlockDimensions = calculateBlockDimensions;
+g.blockDimensions = calculateBlockDimensions(g.blockDefinitions);
 
-const blockBenchBoxes = blockBenchBoxes1;
-g.boxes = blockBenchBoxes;
+const meshes = createMeshes(scene, g.blockDimensions);
+g.meshes = meshes;
+meshes.forEach(mesh => g[mesh.name] = mesh);
 
-const totalHeight = blockBenchBoxes.reduce(
+const totalHeight = g.blockDefinitions.reduce(
   (total, box, i) =>
   total + (box.vertical ? box.size : 0) * (i%2 ? THICKNESS : 1),
   0);
 const initialXY = [-totalHeight / 2, -totalHeight / 2];
 
-function createBlocks(blockBenchBoxes, width=WIDTH, thickness=THICKNESS){
-  return blockBenchBoxes
-    .reduce((blocks, box, i) => {
-      const previousBlock = i == 0 ? undefined : blocks[i - 1];
-      const fold = i % 2 != 0;
-      // if it's a fold, axis is on the group, else it's before the group
-      const gOffset = fold ? thickness : -thickness;
-      const mOffset = - gOffset / 2;
-      const sizeAdjustment = fold ? thickness : 1
-      const m = {};
-      const g = {}
-
-      if (box.vertical) {
-        m.size = { w: width, h: box.size * sizeAdjustment };
-        m.pos = [m.size.w / 2, m.size.h / 2 + mOffset];
-        const gy = previousBlock ? previousBlock.m.size.h + gOffset : 0;
-        g.pos = [0, gy];
-      } else {
-        m.size = { w: box.size * sizeAdjustment, h: width };
-        m.pos = [m.size.w / 2 + mOffset, -m.size.h / 2];
-        if (previousBlock.vertical) { // corner block
-          g.pos = [
-            previousBlock.m.size.w + gOffset / 2,
-            previousBlock.m.size.h + gOffset / 2];
-        } else {
-          g.pos = [previousBlock.m.size.w + gOffset, 0];
-        }
-      }
-      blocks.push({ ...box, m, g });
-      return blocks;
-    }, []);
-}
-g.create = createBlocks;
-g.bs = createBlocks(blockBenchBoxes);
-
-const smallSphereG = new THREE.SphereGeometry( .1);
-const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-
-function posToString(pos) {
-  return `[${[pos.x, pos.y, pos.z].map(n => n.toFixed(1)).join(' ')}]`;
-}
-
-const qv0 = new THREE.Quaternion();
-qv0.setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0);
-g.qv0 = qv0;
-const qv90 = new THREE.Quaternion();
-qv90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
-g.qv90 = qv90;
-const qvm90 = new THREE.Quaternion();
-qvm90.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
-g.qvm90 = qvm90;
-const qh0 = new THREE.Quaternion();
-qh0.setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
-g.qh0 = qh0;
-const qh90 = new THREE.Quaternion();
-qh90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2);
-g.qh90 = qh90;
-const qhm90 = new THREE.Quaternion();
-qhm90.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
-g.qhm90 = qhm90;
-
-function determineQuaternion(angle, vertical) {
-  if (isNaN(angle)) {
-    return null;
-  } else if(angle===0) {
-    return vertical ? qv0: qh0;
-  } else if(angle > 0){
-    return vertical ? qv90 : qh90;
-  }else{
-    return vertical ? qvm90 : qhm90;
-  }
-}
-
-function makeTextMaterial(color, text, ratio=1){
-  const ctx = document.createElement('canvas').getContext('2d');
-  ctx.canvas.width = 100 ;
-  ctx.canvas.height = 100 / ratio;
-  ctx.fillStyle = ''+color;
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.font = "30px Arial";
-  ctx.fillStyle = 'black';
-  ctx.fillText(text, 1, 28);
-  const texture = new THREE.CanvasTexture(ctx.canvas);
-  return new THREE.MeshPhongMaterial({ map: texture });
-}
-
-const displayBlocks = (blocks, thickness=THICKNESS, colors=COLORS) =>
-  blocks.reduce((meshes, block, i) => {
-    const { m, g, name } = block;
-
-    const parentGroup = new THREE.Group();
-    parentGroup.position.set(...g.pos, 0);
-    parentGroup.name = 'g' + name;
-
-    const smallRedSphere = new THREE.Mesh(smallSphereG, redMaterial);
-    smallRedSphere.position.set(0, 0, 0);
-    smallRedSphere.rotation.z = Math.PI / 2;
-    smallRedSphere.name = 'a' + name;
-    parentGroup.add(smallRedSphere);
-
-    const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
-    const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
-      colors[i % 2], name, m.size.w / m.size.h));
-    mesh.position.set(...m.pos, 0);
-    mesh.name = name;
-
-    mesh.userData.angle = block.angle;
-    mesh.userData.vertical = block.vertical;
-
-    parentGroup.add(mesh);
-
-    const previousMesh = meshes[meshes.length - 1];
-
-    scene.add(parentGroup);
-    // only works if added after scene.add
-    previousMesh?.parent.add(mesh.parent);
-    meshes.push(mesh);
-
-    const sizeString = [m.size.w, m.size.h].map(s => s.toFixed(1)).join(' ');
-    console.log(`${name}\tS[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
-    return meshes;
-  }, []);
-
-const meshes = displayBlocks(g.bs);
-meshes.forEach(mesh => g[mesh.name] = mesh);
-
-const theGroup = new THREE.Group();
-theGroup.position.set(...initialXY, 0);
-theGroup.add(meshes[0].parent);
-scene.add(theGroup);
-g.ms = meshes;
-
+const flexagonGroup = new THREE.Group();
+flexagonGroup.position.set(...initialXY, 0);
+flexagonGroup.add(meshes[0].parent);
+scene.add(flexagonGroup);
 
 // use a quaternion to rotate the second block 45%
 const q2 = new THREE.Quaternion();
@@ -216,140 +61,19 @@ const ambIntensity = 1;
 const amblight = new THREE.AmbientLight(ambColor, ambIntensity);
 scene.add(amblight);
 
-
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(-1, 2, 0);
 controls.update();
 
-function addMeshToGroup0(mesh, group) {
-  // add mesh to group
-  const diff = new THREE.Vector3();
-  diff.sub(group.position)
-  scene.add(group);
-  group.add(mesh);
-  mesh.position.add(diff);
-}
-
-function addMeshToGroup(mesh, group) {
-  const initialPosition = new THREE.Vector3();
-  mesh.getWorldPosition(initialPosition);
-  // console.log('initialPosition', initialPosition);
-  const localPosition = initialPosition.clone();
-  group.worldToLocal(localPosition);
-  // console.log('localPosition', localPosition);
-  group.add(mesh);
-  mesh.position.copy(localPosition);
-}
-
-function removeMeshFromGroup(mesh, scene) {
-  const newPosition = new THREE.Vector3();
-  mesh.getWorldPosition(newPosition);
-  // console.log('newPosition', newPosition);
-  scene.add(b);
-  b.position.copy(newPosition);
-}
-
-function rotateAroundPoint(mesh, rotationPoint, quaternion, scene) {
-  const previousGroup = mesh.parent;
-  const group = new THREE.Group();
-  group.position.copy(rotationPoint);
-  addMeshToGroup(mesh, group);
-  group.quaternion.multiply(quaternion);
-  if(previousGroup) {
-    addMeshToGroup(mesh, previousGroup);
-  }else{
-    removeMeshFromGroup(mesh, scene);
-  }
-  mesh.quaternion.multiply(quaternion);
-}
-// clone the quaternion
-const q2inv = q2.clone();
-q2inv.invert();
-const axisPoint = new THREE.Vector3(0, 0, 0);
-c2.parent.getWorldPosition(axisPoint);
-
-function exposeObjectToWindow(obj) {
-  Object.keys(obj).forEach(key => {
-    window[key] = obj[key];
-  });
-}
-function formatEpoch(epoch){
-  const date = new Date(epoch);
-  return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
-}
-class RotateMesh {
-  constructor(mesh, quat, duration=1000, start=Date.now()){
-    [this.mesh, this.start, this.duration, this.quat] = [mesh, start, duration, quat];
-    this.end = start + duration;
-    // console.log('RM',formatEpoch(this.start), formatEpoch(this.end));
-  }
-  active(now){ return this.start < now && now < this.end; }
-  done(now) { return this._done; }
-  animate(now){
-    if (this.active(now)) {
-      const lastTime = this.lastTime || this.start;
-      const runningTime = lastTime - this.start;
-      const fractionToInterpolate = (now - lastTime) / (this.duration - runningTime);
-      this.mesh.parent.quaternion.slerp(this.quat, fractionToInterpolate);
-      this.lastTime = now;
-    } else if (this.end < now && !this._done){
-      this.mesh.parent.quaternion.slerp(this.quat, 1);
-      this._done = true;
-    }
-  }
-}
 g.RM = RotateMesh
-// defaults are recalculated at every function call
-function makeAnimations(meshes, angleMultiplier=1, animationDuration=2000, animationStart=Date.now()) {
-  let start = animationStart;
-  return meshes.filter(m => !!m.userData.angle)
-    .map(m => {
-      const quat = determineQuaternion(m.userData.angle * angleMultiplier,
-                                       m.userData.vertical);
-      const anim = new RotateMesh(m, quat, animationDuration, start);
-      // uncomment to animate one after the other
-      // start = anim.end;
-      return anim;
-    });
-}
 g.makeAnimations = makeAnimations;
 g.animationQueue = [];
-function runAnimations(animationQueue){
-  const now = Date.now();
-  let i = animationQueue.length;
-  while(i--){
-    const animation = animationQueue[i];
-    animation.animate(now);
-    if(animation.done(now)){
-      animationQueue.splice(i,1);
-    }
-  }
-}
 g.runAnimations = runAnimations
-
-function resizeMesh(m,xyz){
-  const [x,y,z] = xyz;
-  const diffs = {x:x, y:y, z:z};
-  const subgroup = m.parent.children.find(c=>c.type==='Group');
-  ['x','y','z'].forEach(dim =>{
-    if (subgroup) {
-      subgroup.position[dim] += diffs[dim];
-    }
-    m.position[dim] += diffs[dim] / 2;
-  });
-  m.geometry.computeBoundingBox();
-  const {min, max} = m.geometry.boundingBox;
-  const scaleFactors = ['x','y','z'].map(dim => 1 + diffs[dim]/(max[dim]-min[dim]));
-  console.log(scaleFactors);
-  m.geometry.scale(...scaleFactors);
-}
 g.resizeMesh = resizeMesh;
 
 // To run animations:
-// fold
-// makeAnimations(ms).forEach(a => animationQueue.push(a))
-// unfold
-// makeAnimations(ms,0).forEach(a => animationQueue.push(a))
+g.fold = () => makeAnimations(ms).forEach(a => animationQueue.push(a));
+g.unfold = () =>  makeAnimations(ms,0).forEach(a => animationQueue.push(a))
 
 function calculateSize(meshes, width=WIDTH, thickness=THICKNESS){
   return meshes.map(m=>m.parent.position).reduce((a,p)=>{
@@ -366,7 +90,6 @@ g.calculateSize = calculateSize;
 function animate() {
   renderer.render( scene, camera );
   // ct3a.parent.quaternion.multiply(q2);
-  // rotateAroundPoint(b, new THREE.Vector3(1,1,1), q2, scene);
   runAnimations(g.animationQueue);
   // rotateAroundPoint(ct3a.parent,axisPoint, q2inv, scene);
 }
