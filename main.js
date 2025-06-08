@@ -53,7 +53,9 @@ g.qz180 = new THREE.Quaternion();
 g.qz180.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI);
 meshes2[0].parent.quaternion.multiply(g.qz180);
 meshes1[meshes1.length-1].add(meshes2[0].parent);
-meshes2[0].parent.position.set(4,1.75,0);
+//TODO calculate these magic numbers
+meshes2[0].parent.position.set(0.75,1.75,0);
+meshes2[0].parent.quaternion.multiply(g.qhm90)
 
 const totalHeight = g.blockDefinitions.reduce(
   (total, box, i) =>
@@ -101,5 +103,5 @@ function animate() {
 renderer.setAnimationLoop( animate );
 
 exposeObjectToWindow(g);
-fold(meshes1)
-fold(meshes2,-1)
+// fold(meshes1)
+// fold(meshes2,-1)

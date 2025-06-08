@@ -48,21 +48,23 @@ export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thicknes
       // if it's a fold, axis is on the group, else it's before the group
       const gOffset = fold ? thickness : -thickness;
       const mOffset = - gOffset / 2;
+      const mFoldOffset = thickness / 2;
       const sizeAdjustment = fold ? thickness : 1
       const m = {};
       const g = {}
 
       if (box.vertical) {
         m.size = { w: width, h: box.size * sizeAdjustment };
-        m.pos = [m.size.w / 2, m.size.h / 2 + mOffset];
+        m.pos = [- m.size.w / 2 - mFoldOffset, m.size.h / 2 + mOffset];
+        const gx = previousBlock ? 0 : m.size.w;
         const gy = previousBlock ? previousBlock.m.size.h + gOffset : 0;
-        g.pos = [0, gy];
+        g.pos = [gx, gy];
       } else {
         m.size = { w: box.size * sizeAdjustment, h: width };
         m.pos = [m.size.w / 2 + mOffset, -m.size.h / 2];
         if (previousBlock.vertical) { // corner block
           g.pos = [
-            previousBlock.m.size.w + gOffset / 2,
+            0,//gOffset / 2,//previousBlock.m.size.w + gOffset / 2,
             previousBlock.m.size.h + gOffset / 2];
         } else {
           g.pos = [previousBlock.m.size.w + gOffset, 0];
