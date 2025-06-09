@@ -1,41 +1,18 @@
 import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import { createScene } from './scene.js';
 import {blockDefinitionsShort, blockDefinitionsLong,
         WIDTH, THICKNESS,
         calculateBlockDimensions, createMeshes, resizeMesh
        } from './flexagon.js';
 import { rotateAroundPoint, exposeObjectToWindow } from './utils.js';
 import { quaternions, RotateMesh, makeAnimations, runAnimations } from './animations.js';
-const g = {}; //globals
-const scene = new THREE.Scene();
-g.THREE = THREE;
-g.scene = scene;
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-g.camera = camera;
 
-camera.position.set(0,0,25)
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
+const { scene, camera, renderer } = createScene(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-const color = 0xFFFFFF;
-const intensity = 3;
-const light = new THREE.DirectionalLight(color, intensity);
-light.position.set(-1, 2, 4);
-scene.add(light);
-
-const ambColor = 0x888888;
-const ambIntensity = 1;
-const amblight = new THREE.AmbientLight(ambColor, ambIntensity);
-scene.add(amblight);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(-1, 2, 0);
-controls.update();
-
+const g = {THREE, scene, camera}; //globals
 g.WIDTH = WIDTH;
 g.THICKNESS = THICKNESS;
-
 Object.assign(g, quaternions);
 g.blockDefinitions = blockDefinitionsShort;
 g.calculateBlockDimensions = calculateBlockDimensions;
