@@ -40,6 +40,10 @@ export const blockDefinitionsLong = [
   {vertical: false, size: 1, angle:   0, name: "u9_10"}
 ];
 
+function formatNum(number) {
+  const sign = number >= 0 ? ' ' : '-';
+  return sign + Math.abs(number).toFixed(2);
+}
 export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thickness=THICKNESS){
   return blockDefinitions
     .reduce((blocks, box, i) => {
@@ -56,20 +60,25 @@ export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thicknes
       if (box.vertical) {
         m.size = { w: width, h: box.size * sizeAdjustment };
         m.pos = [- m.size.w / 2 - mFoldOffset, m.size.h / 2 + mOffset];
-        const gx = previousBlock ? 0 : m.size.w;
-        const gy = previousBlock ? previousBlock.m.size.h + gOffset : 0;
-        g.pos = [gx, gy];
+        if(previousBlock) {
+          g.pos = [0, previousBlock.m.size.h + gOffset];
+        } else {
+          g.pos = [m.size.w, 0];
+        }
       } else {
         m.size = { w: box.size * sizeAdjustment, h: width };
-        m.pos = [m.size.w / 2 + mOffset, -m.size.h / 2];
+          m.pos = [m.size.w / 2 + mOffset, m.size.h / 2 + mFoldOffset ] ;
         if (previousBlock.vertical) { // corner block
-          g.pos = [
-            0,//gOffset / 2,//previousBlock.m.size.w + gOffset / 2,
-            previousBlock.m.size.h + gOffset / 2];
+          g.pos = [0, 0];
         } else {
           g.pos = [previousBlock.m.size.w + gOffset, 0];
         }
       }
+      const sizeString = [m.size.w, m.size.h].join(' ');
+      let logm = `${String(box.name).padEnd(5,' ')}|s ${sizeString}|`;
+      logm += `g${g.pos.map(formatNum).join(' ')}|`;
+      logm += `m ${m.pos.map(formatNum).join(' ')}|`;
+      console.log(logm);
       blocks.push({ ...box, m, g });
       return blocks;
     }, []);
@@ -127,8 +136,8 @@ export const createMeshes = (scene, blocks, thickness=THICKNESS, colors=COLORS) 
     previousMesh?.parent.add(mesh.parent);
     meshes.push(mesh);
 
-    const sizeString = [m.size.w, m.size.h].map(s => s.toFixed(1)).join(' ');
-    console.log(`${name}\tS[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
+    // const sizeString = [m.size.w, m.size.h].map(s => s.toFixed(1)).join(' ');
+    // console.log(`${name}\tS[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
     return meshes;
   }, []);
 
