@@ -63,7 +63,7 @@ export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thicknes
         if(previousBlock) {
           g.pos = [0, previousBlock.m.size.h + gOffset];
         } else {
-          g.pos = [m.size.w, 0];
+          g.pos = [0, 0];
         }
       } else {
         m.size = { w: box.size * sizeAdjustment, h: width };

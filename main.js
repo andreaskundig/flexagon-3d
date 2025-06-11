@@ -14,6 +14,7 @@ const g = {THREE, scene, camera}; //globals
 g.WIDTH = WIDTH;
 g.THICKNESS = THICKNESS;
 Object.assign(g, quaternions);
+// g.blockDefinitions = blockDefinitionsLong;
 g.blockDefinitions = blockDefinitionsShort;
 g.calculateBlockDimensions = calculateBlockDimensions;
 g.blockDimensions = calculateBlockDimensions(g.blockDefinitions);
@@ -29,10 +30,11 @@ g.meshes2 = meshes2;
 g.qz180 = new THREE.Quaternion();
 g.qz180.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI);
 meshes2[0].parent.quaternion.multiply(g.qz180);
-meshes1[meshes1.length-1].add(meshes2[0].parent);
-//TODO calculate these magic numbers
-meshes2[0].parent.position.set(0.75,1.75,0);
-meshes2[0].parent.quaternion.multiply(g.qhm90)
+meshes1[meshes1.length-1].parent.add(meshes2[0].parent);
+const lastDim = g.blockDimensions[g.blockDimensions.length-1]
+meshes2[0].parent.position.set(lastDim.m.size.w - THICKNESS,
+                               lastDim.m.size.h + THICKNESS);
+// meshes2[0].parent.quaternion.multiply(g.qhm90)
 
 const totalHeight = g.blockDefinitions.reduce(
   (total, box, i) =>
