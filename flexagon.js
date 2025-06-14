@@ -40,46 +40,160 @@ export const blockDefinitionsLong = [
   {vertical: false, size: 1, angle:   0, name: "u9_10"}
 ];
 
+
+
 function formatNum(number) {
   const sign = number >= 0 ? ' ' : '-';
   return sign + Math.abs(number).toFixed(2);
 }
+
+/*
+  size
+   __________
+  |         |\ depth
+  |         | |
+  |_________| | breadth
+  \__________\|
+   length
+
+  orientation
+   horizontal                 vertical
+   ___________________        _______
+  |        |         |\      |      |\
+  |        |         | |     |      | |
+  |________|_________| |     |______| |
+   \________\_________\|     |      |\|
+                             |      | |
+                             |      | |
+                             |______| |
+                              \______\|
+
+  offset from axis
+             __  parallel
+            |
+            | perpendicular
+   _________|
+  |         |\
+  |         | |
+  |_________| |
+   \_________\|
+
+  non fold
+  vertical                  horizontal
+                             _             _
+    |________________|        |___________|
+       |          |           |           |
+       |          |           |___________|
+     __|__________|__        _|           |_
+    |                |
+
+  fold
+  vertical                  horizontal
+     ________________          _         _
+    |  |          |  |        |___________|
+       |          |           |           |
+    |__|__________|__|        |___________|
+                              |_         _|
+ */
+function axisOffset(depth, vertical, fold, top, right){
+  let perpendicular = vertical ? [0, depth] : [depth, 0];
+  let parallel = [...perpendicular].reverse().map(d => d/2);
+  const north = vertical ? top : right;
+  const east = vertical ? right : !top;
+  if (east != vertical) { perpendicular = perpendicular.map(d => -d); }
+  if (fold == north) { parallel = parallel.map(d => -d); }
+  return perpendicular.map((d,i) => d + parallel[i]);
+}
+
+export function testAxisOffset(){
+  // vertical fold
+  assertEqual([-1, 2], axisOffset(2, true, true, true,  true));  // top right
+  assertEqual([-1,-2], axisOffset(2, true, true, true,  false)); // top left
+  assertEqual([ 1,-2], axisOffset(2, true, true, false, false)); // bottom left
+  assertEqual([ 1, 2], axisOffset(2, true, true, false, true));  // bottom right
+  
+  // vertical non fold
+  assertEqual([ 1, 2], axisOffset(2, true, false, true,  true));  // top right
+  assertEqual([ 1,-2], axisOffset(2, true, false, true,  false)); // top left
+  assertEqual([-1,-2], axisOffset(2, true, false, false, false)); // bottom left
+  assertEqual([-1, 2], axisOffset(2, true, false, false, true));  // bottom right
+   
+  // horizontal fold
+  assertEqual([ 2,-1], axisOffset(2, false, true, true,  true));  // top right
+  assertEqual([ 2, 1], axisOffset(2, false, true, true,  false)); // top left
+  assertEqual([-2, 1], axisOffset(2, false, true, false, false)); // bottom left
+  assertEqual([-2,-1], axisOffset(2, false, true, false, true));  // bottom right
+   
+  // horizontal non fold
+  assertEqual([ 2, 1], axisOffset(2, false, false, true,  true));  // top right
+  assertEqual([ 2,-1], axisOffset(2, false, false, true,  false)); // top left
+  assertEqual([-2,-1], axisOffset(2, false, false, false, false)); // bottom left
+  assertEqual([-2, 1], axisOffset(2, false, false, false, true));  // bottom right
+}
+
+function assertEqual(arr1, arr2) {
+  arr1.forEach((a1,i) => {
+    if (a1!=arr2[i]) { throw Error(`${arr1} != ${arr2}`); }
+  });
+}
+
+function blockSize(lengthUnits, breadth, depth, vertical, fold){
+  const lengthUnitValue = fold ? 1 : depth;
+  const length = lengthUnits * lengthUnitValue;
+  return vertical ? [breadth, length] : [length, breadth];
+}
+
+function appendNewBlockDims(fold, width, thickness, vertical, box, previousBlock){
+  // if it's a fold, axis is on the group, else it's before the group
+  const gOffset = fold ? thickness : -thickness;
+  const mOffset = - gOffset / 2;
+  const mFoldOffset = thickness / 2;
+  const sizeAdjustment = fold ? thickness : 1
+  const m = {};
+  const g = {}
+
+  if (vertical) {
+    m.size = { w: width, h: box.size * sizeAdjustment };
+    m.pos = [- m.size.w / 2 - mFoldOffset, m.size.h / 2 + mOffset];
+    if (previousBlock) {
+      g.pos = [0, previousBlock.m.size.h + gOffset];
+    } else {
+      g.pos = [0, 0];
+    }
+  } else {
+    m.size = { w: box.size * sizeAdjustment, h: width };
+    m.pos = [m.size.w / 2 + mOffset, m.size.h / 2 + mFoldOffset];
+    if (previousBlock.vertical) { // corner block
+      g.pos = [0, 0];
+    } else {
+      g.pos = [previousBlock.m.size.w + gOffset, 0];
+    }
+  }
+  const top = false;
+  const right = vertical;
+  const blosi = blockSize(1, width, thickness, vertical, fold);
+  const axof = axisOffset(thickness, vertical, fold, top, right);
+  console.log(m.pos, axof, blosi.map(d=>d/2));
+  return { ...box, m, g }
+}
+
+function blockDimensionsToString(bdims){
+  const {m, g, name} = bdims;
+  const sizeString = [m.size.w, m.size.h].join(' ');
+  let logm = `${String(name).padEnd(5, ' ')}|s ${sizeString}|`;
+  logm += `g${g.pos.map(formatNum).join(' ')}|`;
+  logm += `m ${m.pos.map(formatNum).join(' ')}|`;
+  return logm;
+}
+
 export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thickness=THICKNESS){
   return blockDefinitions
     .reduce((blocks, box, i) => {
       const previousBlock = i == 0 ? undefined : blocks[i - 1];
       const fold = i % 2 != 0;
-      // if it's a fold, axis is on the group, else it's before the group
-      const gOffset = fold ? thickness : -thickness;
-      const mOffset = - gOffset / 2;
-      const mFoldOffset = thickness / 2;
-      const sizeAdjustment = fold ? thickness : 1
-      const m = {};
-      const g = {}
-
-      if (box.vertical) {
-        m.size = { w: width, h: box.size * sizeAdjustment };
-        m.pos = [- m.size.w / 2 - mFoldOffset, m.size.h / 2 + mOffset];
-        if(previousBlock) {
-          g.pos = [0, previousBlock.m.size.h + gOffset];
-        } else {
-          g.pos = [0, 0];
-        }
-      } else {
-        m.size = { w: box.size * sizeAdjustment, h: width };
-          m.pos = [m.size.w / 2 + mOffset, m.size.h / 2 + mFoldOffset ] ;
-        if (previousBlock.vertical) { // corner block
-          g.pos = [0, 0];
-        } else {
-          g.pos = [previousBlock.m.size.w + gOffset, 0];
-        }
-      }
-      const sizeString = [m.size.w, m.size.h].join(' ');
-      let logm = `${String(box.name).padEnd(5,' ')}|s ${sizeString}|`;
-      logm += `g${g.pos.map(formatNum).join(' ')}|`;
-      logm += `m ${m.pos.map(formatNum).join(' ')}|`;
-      console.log(logm);
-      blocks.push({ ...box, m, g });
+      const bdims = appendNewBlockDims(fold, width, thickness, box.vertical, box, previousBlock);
+      console.log(blockDimensionsToString(bdims));
+      blocks.push(bdims);
       return blocks;
     }, []);
 }

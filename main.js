@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { createScene } from './scene.js';
 import {blockDefinitionsShort, blockDefinitionsLong,
         WIDTH, THICKNESS,
-        calculateBlockDimensions, createMeshes, resizeMesh
+        calculateBlockDimensions, createMeshes, resizeMesh,
+        testAxisOffset
        } from './flexagon.js';
 import { rotateAroundPoint, exposeObjectToWindow } from './utils.js';
 import { quaternions, RotateMesh, makeAnimations, runAnimations } from './animations.js';
@@ -18,6 +19,7 @@ Object.assign(g, quaternions);
 g.blockDefinitions = blockDefinitionsShort;
 g.calculateBlockDimensions = calculateBlockDimensions;
 g.blockDimensions = calculateBlockDimensions(g.blockDefinitions);
+g.runTests = testAxisOffset;
 
 const meshes1 = createMeshes(scene, g.blockDimensions);
 g.meshes1 = meshes1;
@@ -84,3 +86,4 @@ renderer.setAnimationLoop( animate );
 exposeObjectToWindow(g);
 // fold(meshes1)
 // fold(meshes2,-1)
+runTests();
