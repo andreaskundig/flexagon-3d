@@ -3,7 +3,7 @@ import { createScene } from './scene.js';
 import {blockDefinitionsShort, blockDefinitionsLong,
         WIDTH, THICKNESS,
         calculateBlockDimensions, createMeshes, resizeMesh,
-        testAxisOffset
+        testAxisOffset, axisOffset
        } from './flexagon.js';
 import { rotateAroundPoint, exposeObjectToWindow } from './utils.js';
 import { quaternions, RotateMesh, makeAnimations, runAnimations } from './animations.js';
@@ -20,6 +20,11 @@ g.blockDefinitions = blockDefinitionsShort;
 g.calculateBlockDimensions = calculateBlockDimensions;
 g.blockDimensions = calculateBlockDimensions(g.blockDefinitions);
 g.runTests = testAxisOffset;
+g.axisOffset = axisOffset
+// arguments for axisOffset
+// g.top=true; top is an inbuilt object
+g.bottom=false; g.right=true; g.left=false;
+g.fold=true; g.nonfold=false; g.vertical=true; g.horizontal=false;
 
 const meshes1 = createMeshes(scene, g.blockDimensions);
 g.meshes1 = meshes1;

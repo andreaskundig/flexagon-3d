@@ -95,9 +95,9 @@ function formatNum(number) {
     |__|__________|__|        |___________|
                               |_         _|
  */
-function axisOffset(depth, vertical, fold, top, right){
-  let perpendicular = vertical ? [0, depth] : [depth, 0];
-  let parallel = [...perpendicular].reverse().map(d => d/2);
+export function axisOffset(size, vertical, fold, top, right, perpToParall=1){
+  let perpendicular = vertical ? [size, 0] : [0, size];
+  let parallel = [...perpendicular].reverse().map(d => d * perpToParall);
   const north = vertical ? top : right;
   const east = vertical ? right : !top;
   if (east != vertical) { perpendicular = perpendicular.map(d => -d); }
@@ -106,29 +106,33 @@ function axisOffset(depth, vertical, fold, top, right){
 }
 
 export function testAxisOffset(){
+  const top    = fold    = right = vertical   = true;
+  const bottom = nonfold = left  = horizontal = false;
+
   // vertical fold
-  assertEqual([-1, 2], axisOffset(2, true, true, true,  true));  // top right
-  assertEqual([-1,-2], axisOffset(2, true, true, true,  false)); // top left
-  assertEqual([ 1,-2], axisOffset(2, true, true, false, false)); // bottom left
-  assertEqual([ 1, 2], axisOffset(2, true, true, false, true));  // bottom right
-  
+  assertEqual([ 2,-1], axisOffset(2, vertical, fold, top,    right, 0.5));
+  assertEqual([-2,-1], axisOffset(2, vertical, fold, top,    left,  0.5));
+  assertEqual([-2, 1], axisOffset(2, vertical, fold, bottom, left,  0.5));
+  assertEqual([ 2, 1], axisOffset(2, vertical, fold, bottom, right, 0.5));
+
   // vertical non fold
-  assertEqual([ 1, 2], axisOffset(2, true, false, true,  true));  // top right
-  assertEqual([ 1,-2], axisOffset(2, true, false, true,  false)); // top left
-  assertEqual([-1,-2], axisOffset(2, true, false, false, false)); // bottom left
-  assertEqual([-1, 2], axisOffset(2, true, false, false, true));  // bottom right
-   
+  assertEqual([ 2, 1], axisOffset(2, vertical, nonfold, top,    right, 0.5));
+  assertEqual([-2, 1], axisOffset(2, vertical, nonfold, top,    left,  0.5));
+  assertEqual([-2,-1], axisOffset(2, vertical, nonfold, bottom, left,  0.5));
+  assertEqual([ 2,-1], axisOffset(2, vertical, nonfold, bottom, right, 0.5));
+
   // horizontal fold
-  assertEqual([ 2,-1], axisOffset(2, false, true, true,  true));  // top right
-  assertEqual([ 2, 1], axisOffset(2, false, true, true,  false)); // top left
-  assertEqual([-2, 1], axisOffset(2, false, true, false, false)); // bottom left
-  assertEqual([-2,-1], axisOffset(2, false, true, false, true));  // bottom right
-   
+  assertEqual([-1, 2], axisOffset(2, horizontal, fold, top,    right, 0.5));
+  assertEqual([ 1, 2], axisOffset(2, horizontal, fold, top,    left,  0.5));
+  assertEqual([ 1,-2], axisOffset(2, horizontal, fold, bottom, left,  0.5));
+  assertEqual([-1,-2], axisOffset(2, horizontal, fold, bottom, right, 0.5));
+
   // horizontal non fold
-  assertEqual([ 2, 1], axisOffset(2, false, false, true,  true));  // top right
-  assertEqual([ 2,-1], axisOffset(2, false, false, true,  false)); // top left
-  assertEqual([-2,-1], axisOffset(2, false, false, false, false)); // bottom left
-  assertEqual([-2, 1], axisOffset(2, false, false, false, true));  // bottom right
+  assertEqual([ 1, 2], axisOffset(2, horizontal, nonfold, top,    right, 0.5));
+  assertEqual([-1, 2], axisOffset(2, horizontal, nonfold, top,    left,  0.5));
+  assertEqual([-1,-2], axisOffset(2, horizontal, nonfold, bottom, left,  0.5));
+  assertEqual([ 1,-2], axisOffset(2, horizontal, nonfold, bottom, right, 0.5));
+
 }
 
 function assertEqual(arr1, arr2) {
@@ -137,32 +141,45 @@ function assertEqual(arr1, arr2) {
   });
 }
 
-function blockSize(lengthUnits, breadth, depth, vertical, fold){
-  const lengthUnitValue = fold ? 1 : depth;
-  const length = lengthUnits * lengthUnitValue;
-  return vertical ? [breadth, length] : [length, breadth];
+function blockSize(length, breadth, depth, vertical, fold){
+  const lengthAdjustment = fold ? depth : 1;
+  const adjLength = length * lengthAdjustment;
+  return vertical ? [breadth, adjLength] : [adjLength, breadth];
 }
 
-function appendNewBlockDims(fold, width, thickness, vertical, box, previousBlock){
-  // if it's a fold, axis is on the group, else it's before the group
-  const gOffset = fold ? thickness : -thickness;
-  const mOffset = - gOffset / 2;
-  const mFoldOffset = thickness / 2;
-  const sizeAdjustment = fold ? thickness : 1
-  const m = {};
-  const g = {}
+/*
 
+vertical
+block: length 4, breadth 3, depth 0.5, vertical, nonfold, size [3,4]
+axis: size 0.25, nonfold bottom right, offset [0.25,-0.25]
+    ___________
+    |         | - (3/2 + 0.25) = -1.75
+    |    .....|....
+    |         |   :
+    |_________|___:  4/2 + 0.25 = 2.25
+                  |
+
+vertical
+block: length 1, breadth 3, depth 0.5, vertical, fold, size [3,1]
+axis: size 0.25, fold bottom right, offset [0.25,-0.25]
+    ___________
+    |         | - (3/2 + 0.25) = -1.75
+    |    .....|....
+    |         |   :  1/2 - 0.25 =  0.25
+    |_________|___|
+
+ */
+function appendNewBlockDims(fold, breadth, depth, vertical, box, previousBlock){
+  // if it's a fold, axis is on the group, else it's before the group
+  const gOffset = fold ? depth : -depth;
+  const g = {}
   if (vertical) {
-    m.size = { w: width, h: box.size * sizeAdjustment };
-    m.pos = [- m.size.w / 2 - mFoldOffset, m.size.h / 2 + mOffset];
     if (previousBlock) {
       g.pos = [0, previousBlock.m.size.h + gOffset];
     } else {
       g.pos = [0, 0];
     }
   } else {
-    m.size = { w: box.size * sizeAdjustment, h: width };
-    m.pos = [m.size.w / 2 + mOffset, m.size.h / 2 + mFoldOffset];
     if (previousBlock.vertical) { // corner block
       g.pos = [0, 0];
     } else {
@@ -171,9 +188,13 @@ function appendNewBlockDims(fold, width, thickness, vertical, box, previousBlock
   }
   const top = false;
   const right = vertical;
-  const blosi = blockSize(1, width, thickness, vertical, fold);
-  const axof = axisOffset(thickness, vertical, fold, top, right);
-  console.log(m.pos, axof, blosi.map(d=>d/2));
+  const msize = blockSize(box.size, breadth, depth, vertical, fold);
+  const axof = axisOffset(depth/2, vertical, fold, top, right);
+  const multi = [right ? -1 : 1, top ? -1 : 1];
+  // TODO WHY the negative - axof ???
+  const pos = msize.map((n,i)=> n * multi[i] / 2 - axof[i]);
+  const [w, h] = msize;
+  const m = { size: { w , h }, pos };
   return { ...box, m, g }
 }
 
