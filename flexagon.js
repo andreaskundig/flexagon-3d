@@ -151,19 +151,19 @@ function blockSize(length, breadth, depth, vertical, fold){
 
 vertical
 block: length 4, breadth 3, depth 0.5, vertical, nonfold, size [3,4]
-axis: size 0.25, nonfold bottom right, offset [0.25,-0.25]
+axis: size 0.25, nonfold, bottom right, offset [0.25,-0.25]
     ___________
-    |         | - (3/2 + 0.25) = -1.75
+    |         | - 3/2 - 0.25 = -1.75
     |    .....|....
     |         |   :
-    |_________|___:  4/2 + 0.25 = 2.25
+    |_________|___:  4/2 - (-0.25) = 2.25
                   |
 
 vertical
 block: length 1, breadth 3, depth 0.5, vertical, fold, size [3,1]
-axis: size 0.25, fold bottom right, offset [0.25,-0.25]
+axis: size 0.25, fold, bottom right, offset [0.25, 0.25]
     ___________
-    |         | - (3/2 + 0.25) = -1.75
+    |         | - 3/2 - (-0.25) = -1.75
     |    .....|....
     |         |   :  1/2 - 0.25 =  0.25
     |_________|___|
@@ -172,26 +172,20 @@ axis: size 0.25, fold bottom right, offset [0.25,-0.25]
 function appendNewBlockDims(fold, breadth, depth, vertical, box, previousBlock){
   // if it's a fold, axis is on the group, else it's before the group
   const gOffset = fold ? depth : -depth;
-  const g = {}
-  if (vertical) {
-    if (previousBlock) {
-      g.pos = [0, previousBlock.m.size.h + gOffset];
-    } else {
-      g.pos = [0, 0];
-    }
-  } else {
-    if (previousBlock.vertical) { // corner block
-      g.pos = [0, 0];
-    } else {
-      g.pos = [previousBlock.m.size.w + gOffset, 0];
-    }
+  const g = { };
+  if(!previousBlock || vertical != previousBlock.vertical) {
+    // first or first after corner
+    g.pos = [0, 0];
+  } else if (vertical) {
+    g.pos = [0, previousBlock.m.size.h + gOffset];
+  } else { // horizontal
+    g.pos = [previousBlock.m.size.w + gOffset, 0];
   }
   const top = false;
   const right = vertical;
   const msize = blockSize(box.size, breadth, depth, vertical, fold);
   const axof = axisOffset(depth/2, vertical, fold, top, right);
   const multi = [right ? -1 : 1, top ? -1 : 1];
-  // TODO WHY the negative - axof ???
   const pos = msize.map((n,i)=> n * multi[i] / 2 - axof[i]);
   const [w, h] = msize;
   const m = { size: { w , h }, pos };
