@@ -186,6 +186,11 @@ function appendNewBlockDims(fold, breadth, depth, vertical, box, previousBlock){
   const msize = blockSize(box.size, breadth, depth, vertical, fold);
   const axof = axisOffset(depth/2, vertical, fold, top, right);
   const multi = [right ? -1 : 1, top ? -1 : 1];
+
+  // distance to right corner = w/2
+  // dist right corner to axis = axisOffset[0]
+  // total distance to move towards = w/2 + axisOffset[0]
+  // m.pos -= w/2 + axisOffset[0]
   const pos = msize.map((n,i)=> n * multi[i] / 2 - axof[i]);
   const [w, h] = msize;
   const m = { size: { w , h }, pos };
