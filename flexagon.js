@@ -40,7 +40,12 @@ export const blockDefinitionsLong = [
   {vertical: false, size: 1, angle:   0, name: "u9_10"}
 ];
 
+function addFold(blockDefinitions){
+  blockDefinitions.forEach((b,i) => b.fold = i % 2 != 0);
+}
 
+addFold(blockDefinitionsLong);
+addFold(blockDefinitionsShort);
 
 function formatNum(number) {
   const sign = number >= 0 ? ' ' : '-';
@@ -169,22 +174,24 @@ axis: size 0.25, fold, bottom right, offset [0.25, 0.25]
     |_________|___|
 
  */
-function appendNewBlockDims(fold, breadth, depth, vertical, box, previousBlock){
+function appendNewBlockDims(breadth, depth, def, previousDims) {
+  const previousDim = previousDims[previousDims.length-1]
   // if it's a fold, axis is on the group, else it's before the group
-  const gOffset = fold ? depth : -depth;
+  const gOffset = def.fold ? depth : -depth;
+  const { vertical } = def;
   const g = { };
-  if(!previousBlock || vertical != previousBlock.vertical) {
+  if(!previousDim || vertical != previousDim.vertical) {
     // first or first after corner
     g.pos = [0, 0];
   } else if (vertical) {
-    g.pos = [0, previousBlock.m.size.h + gOffset];
+    g.pos = [0, previousDim.m.size.h + gOffset];
   } else { // horizontal
-    g.pos = [previousBlock.m.size.w + gOffset, 0];
+    g.pos = [previousDim.m.size.w + gOffset, 0];
   }
   const top = false;
   const right = vertical;
-  const msize = blockSize(box.size, breadth, depth, vertical, fold);
-  const axof = axisOffset(depth/2, vertical, fold, top, right);
+  const msize = blockSize(def.size, breadth, depth, vertical, def.fold);
+  const axof = axisOffset(depth/2, vertical, def.fold, top, right);
   const multi = [right ? -1 : 1, top ? -1 : 1];
 
   // distance to right corner = w/2
@@ -194,7 +201,9 @@ function appendNewBlockDims(fold, breadth, depth, vertical, box, previousBlock){
   const pos = msize.map((n,i)=> n * multi[i] / 2 - axof[i]);
   const [w, h] = msize;
   const m = { size: { w , h }, pos };
-  return { ...box, m, g }
+  const bdims = { ...def, m, g }
+  console.log(blockDimensionsToString(bdims));
+  return [...previousDims, bdims];
 }
 
 function blockDimensionsToString(bdims){
@@ -208,14 +217,7 @@ function blockDimensionsToString(bdims){
 
 export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thickness=THICKNESS){
   return blockDefinitions
-    .reduce((blocks, box, i) => {
-      const previousBlock = i == 0 ? undefined : blocks[i - 1];
-      const fold = i % 2 != 0;
-      const bdims = appendNewBlockDims(fold, width, thickness, box.vertical, box, previousBlock);
-      console.log(blockDimensionsToString(bdims));
-      blocks.push(bdims);
-      return blocks;
-    }, []);
+    .reduce((dims, def) => appendNewBlockDims(width, thickness, def, dims), []);
 }
 
 const smallSphereG = new THREE.SphereGeometry( .1);
@@ -268,11 +270,10 @@ export const createMeshes = (scene, blocks, thickness=THICKNESS, colors=COLORS) 
     scene.add(parentGroup);
     // only works if added after scene.add
     previousMesh?.parent.add(mesh.parent);
-    meshes.push(mesh);
 
     // const sizeString = [m.size.w, m.size.h].map(s => s.toFixed(1)).join(' ');
     // console.log(`${name}\tS[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
-    return meshes;
+    return [...meshes, mesh];
   }, []);
 
 export function resizeMesh(m,xyz){
