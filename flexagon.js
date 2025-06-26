@@ -47,11 +47,6 @@ function addFold(blockDefinitions){
 addFold(blockDefinitionsLong);
 addFold(blockDefinitionsShort);
 
-function formatNum(number) {
-  const sign = number >= 0 ? ' ' : '-';
-  return sign + Math.abs(number).toFixed(2);
-}
-
 /*
   size
    __________
@@ -110,42 +105,6 @@ export function axisOffset(size, vertical, fold, top, right, perpToParall=1){
   return perpendicular.map((d,i) => d + parallel[i]);
 }
 
-export function testAxisOffset(){
-  const top    = fold    = right = vertical   = true;
-  const bottom = nonfold = left  = horizontal = false;
-
-  // vertical fold
-  assertEqual([ 2,-1], axisOffset(2, vertical, fold, top,    right, 0.5));
-  assertEqual([-2,-1], axisOffset(2, vertical, fold, top,    left,  0.5));
-  assertEqual([-2, 1], axisOffset(2, vertical, fold, bottom, left,  0.5));
-  assertEqual([ 2, 1], axisOffset(2, vertical, fold, bottom, right, 0.5));
-
-  // vertical non fold
-  assertEqual([ 2, 1], axisOffset(2, vertical, nonfold, top,    right, 0.5));
-  assertEqual([-2, 1], axisOffset(2, vertical, nonfold, top,    left,  0.5));
-  assertEqual([-2,-1], axisOffset(2, vertical, nonfold, bottom, left,  0.5));
-  assertEqual([ 2,-1], axisOffset(2, vertical, nonfold, bottom, right, 0.5));
-
-  // horizontal fold
-  assertEqual([-1, 2], axisOffset(2, horizontal, fold, top,    right, 0.5));
-  assertEqual([ 1, 2], axisOffset(2, horizontal, fold, top,    left,  0.5));
-  assertEqual([ 1,-2], axisOffset(2, horizontal, fold, bottom, left,  0.5));
-  assertEqual([-1,-2], axisOffset(2, horizontal, fold, bottom, right, 0.5));
-
-  // horizontal non fold
-  assertEqual([ 1, 2], axisOffset(2, horizontal, nonfold, top,    right, 0.5));
-  assertEqual([-1, 2], axisOffset(2, horizontal, nonfold, top,    left,  0.5));
-  assertEqual([-1,-2], axisOffset(2, horizontal, nonfold, bottom, left,  0.5));
-  assertEqual([ 1,-2], axisOffset(2, horizontal, nonfold, bottom, right, 0.5));
-
-}
-
-function assertEqual(arr1, arr2) {
-  arr1.forEach((a1,i) => {
-    if (a1!=arr2[i]) { throw Error(`${arr1} != ${arr2}`); }
-  });
-}
-
 function blockSize(length, breadth, depth, vertical, fold){
   const lengthAdjustment = fold ? depth : 1;
   const adjLength = length * lengthAdjustment;
@@ -184,11 +143,13 @@ function meshDimensions(def,breadth, depth, top, right, vertical){
   // dist right corner to axis = axisOffset[0]
   // total distance to move towards = w/2 + axisOffset[0]
   // m.pos -= w/2 + axisOffset[0]
-  const pos = msize.map((n,i)=> - (n * multi[i] / 2 + axof[i]));
+  const pos = msize.map((n,i) => - (n * multi[i] / 2 + axof[i]));
   const [w, h] = msize;
   return { size: { w , h }, pos };
 }
-
+// TODO add options for blocks to the left and below
+// TODO calculate g.pos for top/right/bottom/left, on the current Dim, not previous
+// in order to have calcuation for m and g in the same place
 function groupDimensions(def, previousDim) {
   if(!previousDim) {// first
     return { pos: [0, 0] };
@@ -221,6 +182,11 @@ function blockDimensionsToString(bdims){
   logm += `g${g.pos.map(formatNum).join(' ')}|`;
   logm += `m ${m.pos.map(formatNum).join(' ')}|`;
   return logm;
+}
+
+function formatNum(number) {
+  const sign = number >= 0 ? ' ' : '-';
+  return sign + Math.abs(number).toFixed(2);
 }
 
 export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thickness=THICKNESS){

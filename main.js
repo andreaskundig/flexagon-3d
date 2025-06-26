@@ -3,8 +3,9 @@ import { createScene } from './scene.js';
 import {blockDefinitionsShort, blockDefinitionsLong,
         WIDTH, THICKNESS,
         calculateBlockDimensions, createMeshes, resizeMesh,
-        testAxisOffset, axisOffset
+        axisOffset
        } from './flexagon.js';
+import { testAxisOffset} from './tests.js';
 import { rotateAroundPoint, exposeObjectToWindow } from './utils.js';
 import { quaternions, RotateMesh, makeAnimations, runAnimations } from './animations.js';
 
