@@ -27,12 +27,11 @@ g.axisOffset = axisOffset
 g.bottom=false; g.right=true; g.left=false;
 g.fold=true; g.nonfold=false; g.vertical=true; g.horizontal=false;
 
-const meshes1 = createMeshes(scene, g.blockDimensions);
+const meshes1 = createMeshes(g.blockDimensions);
 g.meshes1 = meshes1;
 meshes1.forEach(mesh => g[mesh.name] = mesh);
 
-const meshes2 = createMeshes(
-  scene, g.blockDimensions.map(b => ({...b, name: b.name+'b'})));
+const meshes2 = createMeshes(g.blockDimensions.map(b => ({...b, name: b.name+'b'})));
 meshes2.forEach(mesh => g[mesh.name] = mesh);
 g.meshes2 = meshes2;
 g.qz180 = new THREE.Quaternion();

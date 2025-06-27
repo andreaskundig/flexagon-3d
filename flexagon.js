@@ -41,7 +41,10 @@ export const blockDefinitionsLong = [
 ];
 
 function addFold(blockDefinitions){
-  blockDefinitions.forEach((b,i) => b.fold = i % 2 != 0);
+  blockDefinitions.forEach((b,i) => {
+    b.fold = i % 2 != 0;
+    b.color = COLORS[b.fold ? 1 : 0];
+  });
 }
 
 addFold(blockDefinitionsLong);
@@ -214,41 +217,41 @@ export function makeTextMaterial(color, text, ratio=1){
   return new THREE.MeshPhongMaterial({ map: texture });
 }
 
-export const createMeshes = (scene, blocks, thickness=THICKNESS, colors=COLORS) =>
-  blocks.reduce((meshes, block, i) => {
-    const { m, g, name } = block;
+function createParentGroup(block) {
+  const { g, name } = block;
+  const parentGroup = new THREE.Group();
+  parentGroup.position.set(...g.pos, 0);
+  parentGroup.name = 'g' + name;
+  const smallRedSphere = new THREE.Mesh(smallSphereG, redMaterial);
+  smallRedSphere.position.set(0, 0, 0);
+  smallRedSphere.rotation.z = Math.PI / 2;
+  smallRedSphere.name = 'a' + name;
+  parentGroup.add(smallRedSphere);
+  return parentGroup;
+}
 
-    const parentGroup = new THREE.Group();
-    parentGroup.position.set(...g.pos, 0);
-    parentGroup.name = 'g' + name;
+function createBoxMesh(block, thickness){
+  const { m, name, color } = block;
+  const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
+  const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
+    color, name, m.size.w / m.size.h));
+  mesh.position.set(...m.pos, 0);
+  mesh.name = name;
+  mesh.userData = block
+  return mesh;
+}
 
-    const smallRedSphere = new THREE.Mesh(smallSphereG, redMaterial);
-    smallRedSphere.position.set(0, 0, 0);
-    smallRedSphere.rotation.z = Math.PI / 2;
-    smallRedSphere.name = 'a' + name;
-    parentGroup.add(smallRedSphere);
+function addBlockGroup(block, thickness=THICKNESS, previousMesh){
+  const parentGroup = createParentGroup(block);
+  const mesh = createBoxMesh(block, thickness);
+  parentGroup.add(mesh);
+  previousMesh?.parent.add(mesh.parent);
+  return mesh;
+}
 
-    const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
-    const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
-      colors[i % 2], name, m.size.w / m.size.h));
-    mesh.position.set(...m.pos, 0);
-    mesh.name = name;
-
-    mesh.userData.angle = block.angle;
-    mesh.userData.vertical = block.vertical;
-
-    parentGroup.add(mesh);
-
-    const previousMesh = meshes[meshes.length - 1];
-
-    scene.add(parentGroup);
-    // only works if added after scene.add
-    previousMesh?.parent.add(mesh.parent);
-
-    // const sizeString = [m.size.w, m.size.h].map(s => s.toFixed(1)).join(' ');
-    // console.log(`${name}\tS[${sizeString}] P${posToString(parentGroup.position)} M${posToString(mesh.position)}`);
-    return [...meshes, mesh];
-  }, []);
+export const createMeshes = (blocks, thickness=THICKNESS) =>
+  blocks.reduce((meshes, block, i) =>
+    [...meshes, addBlockGroup(block, thickness, meshes[i - 1])], []);
 
 export function resizeMesh(m,xyz){
   const [x,y,z] = xyz;
