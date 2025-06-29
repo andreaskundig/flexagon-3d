@@ -41,10 +41,7 @@ export const blockDefinitionsLong = [
 ];
 
 function addFold(blockDefinitions){
-  blockDefinitions.forEach((b,i) => {
-    b.fold = i % 2 != 0;
-    b.color = COLORS[b.fold ? 1 : 0];
-  });
+  blockDefinitions.forEach((b,i) => b.fold = i%2 != 0);
 }
 
 addFold(blockDefinitionsLong);
@@ -148,20 +145,21 @@ function meshDimensions(def,breadth, depth, top, right, vertical){
   // m.pos -= w/2 + axisOffset[0]
   const pos = msize.map((n,i) => - (n * multi[i] / 2 + axof[i]));
   const [w, h] = msize;
-  return { size: { w , h }, pos };
+  const color =  COLORS[def.fold ? 1 : 0];
+  return { size: { w , h }, pos, color };
 }
 // TODO add options for blocks to the left and below
 // TODO calculate g.pos for top/right/bottom/left, on the current Dim, not previous
 // in order to have calcuation for m and g in the same place
-function groupDimensions(def, previousDims) {
+function groupPosition(def, previousDims) {
   if(!previousDims) {// first
-    return { pos: [0, 0] };
+    return [0, 0];
   } else if( def.vertical != previousDims.def.vertical) {// first after corner
-    return { pos: [0, 0] };
+    return [0, 0];
   } else if (def.vertical) {
-    return { pos: [0, previousDims.m.pos[1] * 2] };
+    return [0, previousDims.m.pos[1] * 2];
   } else { // horizontal
-    return { pos: [previousDims.m.pos[0] * 2, 0] };
+    return [previousDims.m.pos[0] * 2, 0];
   }
 }
 
@@ -213,10 +211,10 @@ function createParentGroup(block) {
 }
 
 function createBoxMesh(blockDims, thickness){
-  const { m, def: { name, color } } = blockDims;
+  const { m, def: { name } } = blockDims;
   const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
   const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
-    color, name, m.size.w / m.size.h));
+    m.color, name, m.size.w / m.size.h));
   mesh.position.set(...m.pos, 0);
   mesh.name = name;
   mesh.userData.dims = blockDims
@@ -228,7 +226,7 @@ function createBlockDims(breadth, depth, def, previousDims) {
   const right = def.vertical;
   const bdims = {
     def,
-    g: groupDimensions(def, previousDims),
+    g: { pos: groupPosition(def, previousDims) },
     m: meshDimensions(def, breadth, depth, top, right, def.vertical)
   };
   return bdims;
