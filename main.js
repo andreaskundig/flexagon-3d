@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { createScene } from './scene.js';
 import {blockDefinitionsShort, blockDefinitionsLong,
+        blockDimensionsToString,
         WIDTH, THICKNESS,
+        createMeshGroup,
         createMeshes,
         resizeMesh,
         axisOffset
@@ -19,6 +21,8 @@ g.THICKNESS = THICKNESS;
 Object.assign(g, quaternions);
 // g.blockDefinitions = blockDefinitionsLong;
 g.blockDefinitions = blockDefinitionsShort;
+g.blockDimensionsToString = blockDimensionsToString;
+g.createMeshGroup = createMeshGroup;
 g.runTests = testAxisOffset;
 g.axisOffset = axisOffset
 // arguments for axisOffset
@@ -92,3 +96,4 @@ exposeObjectToWindow(g);
 // fold(meshes1)
 // fold(meshes2,-1)
 runTests();
+meshes1.map(m =>   console.log(blockDimensionsToString(m.userData.dims)))

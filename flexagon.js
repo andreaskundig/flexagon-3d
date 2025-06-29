@@ -165,7 +165,7 @@ function groupDimensions(def, previousDims) {
   }
 }
 
-function blockDimensionsToString(bdims){
+export function blockDimensionsToString(bdims){
   const { m, g, def: { name } } = bdims;
   const sizeString = [m.size.w, m.size.h].join(' ');
   let logm = `${String(name).padEnd(5, ' ')}|s ${sizeString}|`;
@@ -231,26 +231,21 @@ function createBlockDims(breadth, depth, def, previousDims) {
     g: groupDimensions(def, previousDims),
     m: meshDimensions(def, breadth, depth, top, right, def.vertical)
   };
-  console.log(blockDimensionsToString(bdims));
   return bdims;
 }
 
-function addBlockGroup(blockDims, previousMesh, thickness=THICKNESS){
-  const parentGroup = createParentGroup(blockDims);
-  const mesh = createBoxMesh(blockDims, thickness);
+export function createMeshGroup(def, previousMesh, width = WIDTH, thickness = THICKNESS) {
+  const dims = createBlockDims(width, thickness, def, previousMesh?.userData.dims);
+  const parentGroup = createParentGroup(dims);
+  const mesh = createBoxMesh(dims, thickness);
   parentGroup.add(mesh);
   previousMesh?.parent.add(mesh.parent);
   return mesh;
 }
 
-export function createMeshes(blockDefinitions, width = WIDTH, thickness = THICKNESS) {
-  return blockDefinitions.reduce((meshes, def, i) => {
-    const previousMesh = meshes[i - 1];
-    const previousDims = previousMesh?.userData.dims
-    const dims = createBlockDims(width, thickness, def, previousDims);
-    return [...meshes, addBlockGroup(dims, previousMesh, thickness)];
-  }, []);
-}
+export const createMeshes = (blockDefinitions, width = WIDTH, thickness = THICKNESS) =>
+  blockDefinitions.reduce((meshes, def, i) =>
+    [...meshes, createMeshGroup(def, meshes[i-1], width, thickness)], []);
 
 export function resizeMesh(m,xyz){
   const [x,y,z] = xyz;
