@@ -153,15 +153,15 @@ function meshDimensions(def,breadth, depth, top, right, vertical){
 // TODO add options for blocks to the left and below
 // TODO calculate g.pos for top/right/bottom/left, on the current Dim, not previous
 // in order to have calcuation for m and g in the same place
-function groupDimensions(def, previousDim) {
-  if(!previousDim) {// first
+function groupDimensions(def, previousDims) {
+  if(!previousDims) {// first
     return { pos: [0, 0] };
-  } else if( def.vertical != previousDim.def.vertical) {// first after corner
+  } else if( def.vertical != previousDims.def.vertical) {// first after corner
     return { pos: [0, 0] };
   } else if (def.vertical) {
-    return { pos: [0, previousDim.m.pos[1] * 2] };
+    return { pos: [0, previousDims.m.pos[1] * 2] };
   } else { // horizontal
-    return { pos: [previousDim.m.pos[0] * 2, 0] };
+    return { pos: [previousDims.m.pos[0] * 2, 0] };
   }
 }
 
@@ -212,46 +212,45 @@ function createParentGroup(block) {
   return parentGroup;
 }
 
-function createBoxMesh(block, thickness){
-  const { m, def: { name, color } } = block;
+function createBoxMesh(blockDims, thickness){
+  const { m, def: { name, color } } = blockDims;
   const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
   const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
     color, name, m.size.w / m.size.h));
   mesh.position.set(...m.pos, 0);
   mesh.name = name;
-  mesh.userData = block
+  mesh.userData.dims = blockDims
   return mesh;
 }
 
-function appendNewBlockDims(breadth, depth, def, previousDims) {
-  const previousDim = previousDims[previousDims.length-1]
+function createBlockDims(breadth, depth, def, previousDims) {
   const top = false;
   const right = def.vertical;
   const bdims = {
     def,
-    g: groupDimensions(def, previousDim),
+    g: groupDimensions(def, previousDims),
     m: meshDimensions(def, breadth, depth, top, right, def.vertical)
   };
   console.log(blockDimensionsToString(bdims));
-  return [...previousDims, bdims];
+  return bdims;
 }
 
-function addBlockGroup(blockDim, previousMesh, thickness=THICKNESS){
-  const parentGroup = createParentGroup(blockDim);
-  const mesh = createBoxMesh(blockDim, thickness);
+function addBlockGroup(blockDims, previousMesh, thickness=THICKNESS){
+  const parentGroup = createParentGroup(blockDims);
+  const mesh = createBoxMesh(blockDims, thickness);
   parentGroup.add(mesh);
   previousMesh?.parent.add(mesh.parent);
   return mesh;
 }
 
-export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thickness=THICKNESS){
-  return blockDefinitions.reduce(
-    (dims, def) => appendNewBlockDims(width, thickness, def, dims), []);
+export function createMeshes(blockDefinitions, width = WIDTH, thickness = THICKNESS) {
+  return blockDefinitions.reduce((meshes, def, i) => {
+    const previousMesh = meshes[i - 1];
+    const previousDims = previousMesh?.userData.dims
+    const dims = createBlockDims(width, thickness, def, previousDims);
+    return [...meshes, addBlockGroup(dims, previousMesh, thickness)];
+  }, []);
 }
-
-export const createMeshes = (blockDimensions, thickness=THICKNESS) =>
-  blockDimensions.reduce((meshes, blockDim, i) =>
-    [...meshes, addBlockGroup(blockDim, meshes[i-1], thickness)], []);
 
 export function resizeMesh(m,xyz){
   const [x,y,z] = xyz;

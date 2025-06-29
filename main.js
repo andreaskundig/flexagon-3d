@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { createScene } from './scene.js';
 import {blockDefinitionsShort, blockDefinitionsLong,
         WIDTH, THICKNESS,
-        calculateBlockDimensions, createMeshes, resizeMesh,
+        createMeshes,
+        resizeMesh,
         axisOffset
        } from './flexagon.js';
 import { testAxisOffset} from './tests.js';
@@ -18,27 +19,26 @@ g.THICKNESS = THICKNESS;
 Object.assign(g, quaternions);
 // g.blockDefinitions = blockDefinitionsLong;
 g.blockDefinitions = blockDefinitionsShort;
-g.calculateBlockDimensions = calculateBlockDimensions;
-g.blockDimensions = calculateBlockDimensions(g.blockDefinitions);
 g.runTests = testAxisOffset;
 g.axisOffset = axisOffset
 // arguments for axisOffset
 // g.top=true; top is an inbuilt object
 g.bottom=false; g.right=true; g.left=false;
-g.fold=true; g.nonfold=false; g.vertical=true; g.horizontal=false;
+g.foldYes=true; g.foldNo=false; g.vertical=true; g.horizontal=false;
 
-const meshes1 = createMeshes(g.blockDimensions);
+const meshes1 = createMeshes(g.blockDefinitions);
+// const meshes1 = createMeshes(g.blockDimensions);
 g.meshes1 = meshes1;
 meshes1.forEach(mesh => g[mesh.name] = mesh);
 
-const meshes2 = createMeshes(g.blockDimensions.map(b => ({...b, def : {...b.def, name: b.def.name+'b'}})));
+const meshes2 = createMeshes(g.blockDefinitions.map(b => ({...b, name: b.name +'b'})));
 meshes2.forEach(mesh => g[mesh.name] = mesh);
 g.meshes2 = meshes2;
 g.qz180 = new THREE.Quaternion();
 g.qz180.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI);
 meshes2[0].parent.quaternion.multiply(g.qz180);
 meshes1[meshes1.length-1].parent.add(meshes2[0].parent);
-const lastDim = g.blockDimensions[g.blockDimensions.length-1]
+const lastDim = meshes1[meshes1.length-1].userData.dims
 meshes2[0].parent.position.set(lastDim.m.size.w - THICKNESS,
                                lastDim.m.size.h + THICKNESS);
 // meshes2[0].parent.quaternion.multiply(g.qhm90)

@@ -1,8 +1,14 @@
 import { axisOffset } from './flexagon.js';
 
 export function testAxisOffset(){
-  const top    = fold    = right = vertical   = true;
-  const bottom = nonfold = left  = horizontal = false;
+  const top   = true;
+  const fold  = true;
+  const right = true;
+  const vertical = true;
+  const bottom = false;
+  const nonfold = false;
+  const left = false;
+  const horizontal = false;
 
   // vertical fold
   assertEqual([ 2,-1], axisOffset(2, vertical, fold, top,    right, 0.5));

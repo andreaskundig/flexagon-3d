@@ -56,10 +56,11 @@ export class RotateMesh {
 // defaults are recalculated at every function call
 export function makeAnimations(meshes, angleMultiplier=1, animationDuration=2000, animationStart=Date.now()) {
   let start = animationStart;
-  return meshes.filter(m => !!m.userData.angle)
+  return meshes.filter(m => !!m.userData.dims.def.angle)
     .map(m => {
-      const quat = determineQuaternion(m.userData.angle * angleMultiplier,
-                                       m.userData.vertical);
+      const def = m.userData.dims.def;
+      const quat = determineQuaternion(def.angle * angleMultiplier,
+                                       def.vertical);
       const anim = new RotateMesh(m, quat, animationDuration, start);
       // uncomment to animate one after the other
       // start = anim.end;
