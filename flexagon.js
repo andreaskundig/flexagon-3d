@@ -156,7 +156,7 @@ function meshDimensions(def,breadth, depth, top, right, vertical){
 function groupDimensions(def, previousDim) {
   if(!previousDim) {// first
     return { pos: [0, 0] };
-  } else if( def.vertical != previousDim.vertical) {// first after corner
+  } else if( def.vertical != previousDim.def.vertical) {// first after corner
     return { pos: [0, 0] };
   } else if (def.vertical) {
     return { pos: [0, previousDim.m.pos[1] * 2] };
@@ -165,21 +165,8 @@ function groupDimensions(def, previousDim) {
   }
 }
 
-function appendNewBlockDims(breadth, depth, def, previousDims) {
-  const previousDim = previousDims[previousDims.length-1]
-  const top = false;
-  const right = def.vertical;
-  const bdims = {
-    ...def,
-    g: groupDimensions(def, previousDim),
-    m: meshDimensions(def, breadth, depth, top, right, def.vertical)
-  };
-  console.log(blockDimensionsToString(bdims));
-  return [...previousDims, bdims];
-}
-
 function blockDimensionsToString(bdims){
-  const {m, g, name} = bdims;
+  const { m, g, def: { name } } = bdims;
   const sizeString = [m.size.w, m.size.h].join(' ');
   let logm = `${String(name).padEnd(5, ' ')}|s ${sizeString}|`;
   logm += `g${g.pos.map(formatNum).join(' ')}|`;
@@ -190,11 +177,6 @@ function blockDimensionsToString(bdims){
 function formatNum(number) {
   const sign = number >= 0 ? ' ' : '-';
   return sign + Math.abs(number).toFixed(2);
-}
-
-export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thickness=THICKNESS){
-  return blockDefinitions.reduce(
-    (dims, def) => appendNewBlockDims(width, thickness, def, dims), []);
 }
 
 const smallSphereG = new THREE.SphereGeometry( .1);
@@ -218,7 +200,7 @@ export function makeTextMaterial(color, text, ratio=1){
 }
 
 function createParentGroup(block) {
-  const { g, name } = block;
+  const { g, def: { name } } = block;
   const parentGroup = new THREE.Group();
   parentGroup.position.set(...g.pos, 0);
   parentGroup.name = 'g' + name;
@@ -231,7 +213,7 @@ function createParentGroup(block) {
 }
 
 function createBoxMesh(block, thickness){
-  const { m, name, color } = block;
+  const { m, def: { name, color } } = block;
   const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
   const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
     color, name, m.size.w / m.size.h));
@@ -241,17 +223,35 @@ function createBoxMesh(block, thickness){
   return mesh;
 }
 
-function addBlockGroup(block, thickness=THICKNESS, previousMesh){
-  const parentGroup = createParentGroup(block);
-  const mesh = createBoxMesh(block, thickness);
+function appendNewBlockDims(breadth, depth, def, previousDims) {
+  const previousDim = previousDims[previousDims.length-1]
+  const top = false;
+  const right = def.vertical;
+  const bdims = {
+    def,
+    g: groupDimensions(def, previousDim),
+    m: meshDimensions(def, breadth, depth, top, right, def.vertical)
+  };
+  console.log(blockDimensionsToString(bdims));
+  return [...previousDims, bdims];
+}
+
+function addBlockGroup(blockDim, previousMesh, thickness=THICKNESS){
+  const parentGroup = createParentGroup(blockDim);
+  const mesh = createBoxMesh(blockDim, thickness);
   parentGroup.add(mesh);
   previousMesh?.parent.add(mesh.parent);
   return mesh;
 }
 
-export const createMeshes = (blocks, thickness=THICKNESS) =>
-  blocks.reduce((meshes, block, i) =>
-    [...meshes, addBlockGroup(block, thickness, meshes[i - 1])], []);
+export function calculateBlockDimensions(blockDefinitions, width=WIDTH, thickness=THICKNESS){
+  return blockDefinitions.reduce(
+    (dims, def) => appendNewBlockDims(width, thickness, def, dims), []);
+}
+
+export const createMeshes = (blockDimensions, thickness=THICKNESS) =>
+  blockDimensions.reduce((meshes, blockDim, i) =>
+    [...meshes, addBlockGroup(blockDim, meshes[i-1], thickness)], []);
 
 export function resizeMesh(m,xyz){
   const [x,y,z] = xyz;
