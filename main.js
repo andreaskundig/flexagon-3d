@@ -6,7 +6,8 @@ import {blockDefinitionsShort, blockDefinitionsLong,
         createMeshGroup,
         createMeshes,
         resizeMesh,
-        axisOffset
+        axisOffset,
+        makeSmallGreenSphere
        } from './flexagon.js';
 import { testAxisOffset} from './tests.js';
 import { rotateAroundPoint, exposeObjectToWindow } from './utils.js';
@@ -23,6 +24,7 @@ Object.assign(g, quaternions);
 g.blockDefinitions = blockDefinitionsShort;
 g.blockDimensionsToString = blockDimensionsToString;
 g.createMeshGroup = createMeshGroup;
+g.makeSmallGreenSphere= makeSmallGreenSphere
 g.runTests = testAxisOffset;
 g.axisOffset = axisOffset
 // arguments for axisOffset
@@ -92,8 +94,27 @@ function animate() {
 }
 renderer.setAnimationLoop( animate );
 
+g.runTests();
+g.meshes1.map(m => console.log(blockDimensionsToString(m.userData.dims)))
+
+g.moveBelow = (mesh, previousMesh) => {
+  mesh.parent.position.y = previousMesh ? previousMesh.position.y * -2: 0;
+  mesh.position.y *= -1;
+}
+g.m0 = createMeshGroup( g.blockDefinitions[0]);
+g.m0.parent.position.z = 2
+scene.add(g.m0.parent);
+g.m1 = createMeshGroup( g.blockDefinitions[1], g.m0);
+g.m1.parent.position.z = 1
+g.m2 = createMeshGroup( g.blockDefinitions[2], g.m1);
+
+// in that order :P
+g.moveBelow(g.m2, g.m1);
+g.moveBelow(g.m1); // no previous :(
+
+g.def0 = g.blockDefinitions[0];
+g.def1 = g.blockDefinitions[1];
+
 exposeObjectToWindow(g);
 // fold(meshes1)
 // fold(meshes2,-1)
-runTests();
-meshes1.map(m =>   console.log(blockDimensionsToString(m.userData.dims)))

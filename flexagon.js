@@ -105,7 +105,7 @@ export function axisOffset(size, vertical, fold, top, right, perpToParall=1){
   return perpendicular.map((d,i) => d + parallel[i]);
 }
 
-function blockSize(length, breadth, depth, vertical, fold){
+export function blockSize(length, breadth, depth, vertical, fold){
   const lengthAdjustment = fold ? depth : 1;
   const adjLength = length * lengthAdjustment;
   return vertical ? [breadth, adjLength] : [adjLength, breadth];
@@ -148,18 +148,19 @@ function meshDimensions(def,breadth, depth, top, right, vertical){
   const color =  COLORS[def.fold ? 1 : 0];
   return { size: { w , h }, pos, color };
 }
+
 // TODO add options for blocks to the left and below
 // TODO calculate g.pos for top/right/bottom/left, on the current Dim, not previous
 // in order to have calcuation for m and g in the same place
-function groupPosition(def, previousDims) {
-  if(!previousDims) {// first
+function groupPosition(vertical, previousMeshPos, previousVertical) {
+  if(!previousMeshPos) {// first
     return [0, 0];
-  } else if( def.vertical != previousDims.def.vertical) {// first after corner
+  } else if(vertical != previousVertical) {// first after corner
     return [0, 0];
-  } else if (def.vertical) {
-    return [0, previousDims.m.pos[1] * 2];
+  } else if (vertical) {
+    return [0, previousMeshPos[1] * 2];
   } else { // horizontal
-    return [previousDims.m.pos[0] * 2, 0];
+    return [previousMeshPos[0] * 2, 0];
   }
 }
 
@@ -179,7 +180,10 @@ function formatNum(number) {
 
 const smallSphereG = new THREE.SphereGeometry( .1);
 const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-
+const greenMaterial =  new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+export function makeSmallGreenSphere () {
+  return new THREE.Mesh(smallSphereG, greenMaterial);
+}
 function posToString(pos) {
   return `[${[pos.x, pos.y, pos.z].map(n => n.toFixed(1)).join(' ')}]`;
 }
@@ -203,8 +207,6 @@ function createParentGroup(block) {
   parentGroup.position.set(...g.pos, 0);
   parentGroup.name = 'g' + name;
   const smallRedSphere = new THREE.Mesh(smallSphereG, redMaterial);
-  smallRedSphere.position.set(0, 0, 0);
-  smallRedSphere.rotation.z = Math.PI / 2;
   smallRedSphere.name = 'a' + name;
   parentGroup.add(smallRedSphere);
   return parentGroup;
@@ -224,15 +226,20 @@ function createBoxMesh(blockDims, thickness){
 function createBlockDims(breadth, depth, def, previousDims) {
   const top = false;
   const right = def.vertical;
+
+  const vertical = def.vertical
+  const previousMeshPos = previousDims?.m.pos;
+  const previousVertical = previousDims?.def.vertical;
   const bdims = {
     def,
-    g: { pos: groupPosition(def, previousDims) },
+    g: { pos: groupPosition(vertical, previousMeshPos, previousVertical) },
     m: meshDimensions(def, breadth, depth, top, right, def.vertical)
   };
   return bdims;
 }
 
-export function createMeshGroup(def, previousMesh, width = WIDTH, thickness = THICKNESS) {
+export function createMeshGroup(def, previousMesh,
+                                width = WIDTH, thickness = THICKNESS) {
   const dims = createBlockDims(width, thickness, def, previousMesh?.userData.dims);
   const parentGroup = createParentGroup(dims);
   const mesh = createBoxMesh(dims, thickness);
