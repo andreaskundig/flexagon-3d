@@ -149,19 +149,16 @@ function meshDimensions(def,breadth, depth, top, right, vertical){
   return { size: { w , h }, pos, color };
 }
 
-// TODO add options for blocks to the left and below
 // TODO calculate g.pos for top/right/bottom/left, on the current Dim, not previous
 // in order to have calcuation for m and g in the same place
-function groupPosition(vertical, previousMeshPos, previousVertical) {
+export function groupPosition(top, right, previousMeshPos) {
   if(!previousMeshPos) {// first
     return [0, 0];
-  } else if(vertical != previousVertical) {// first after corner
-    return [0, 0];
-  } else if (vertical) {
-    return [0, previousMeshPos[1] * 2];
-  } else { // horizontal
-    return [previousMeshPos[0] * 2, 0];
   }
+  return [
+    right ? 0 : previousMeshPos[0] * 2,
+    top ? previousMeshPos[1] * 2 : 0
+  ];
 }
 
 export function blockDimensionsToString(bdims){
@@ -227,12 +224,15 @@ function createBlockDims(breadth, depth, def, previousDims) {
   const top = false;
   const right = def.vertical;
 
-  const vertical = def.vertical
   const previousMeshPos = previousDims?.m.pos;
   const previousVertical = previousDims?.def.vertical;
+  const isCornerG = def.vertical != previousVertical;
+  //TODO reconcile topG and rightG with top and right
+  const rightG = isCornerG || def.vertical ;
+  const topG = !isCornerG && def.vertical;
   const bdims = {
     def,
-    g: { pos: groupPosition(vertical, previousMeshPos, previousVertical) },
+    g: { pos: groupPosition(topG, rightG, previousMeshPos) },
     m: meshDimensions(def, breadth, depth, top, right, def.vertical)
   };
   return bdims;

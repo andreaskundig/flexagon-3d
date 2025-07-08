@@ -7,6 +7,7 @@ import {blockDefinitionsShort, blockDefinitionsLong,
         createMeshes,
         resizeMesh,
         axisOffset,
+        groupPosition,
         makeSmallGreenSphere
        } from './flexagon.js';
 import { testAxisOffset} from './tests.js';
@@ -22,6 +23,7 @@ g.THICKNESS = THICKNESS;
 Object.assign(g, quaternions);
 // g.blockDefinitions = blockDefinitionsLong;
 g.blockDefinitions = blockDefinitionsShort;
+g.groupPosition = groupPosition;
 g.blockDimensionsToString = blockDimensionsToString;
 g.createMeshGroup = createMeshGroup;
 g.makeSmallGreenSphere= makeSmallGreenSphere
