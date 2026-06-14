@@ -164,6 +164,29 @@ export function groupPosition(top, right, previousMeshPos) {
   ];
 }
 
+function createBlockDims(breadth, depth, def, previousDims) {
+  const top = false;
+  const right = def.vertical;
+
+  const previousMeshPos = previousDims?.m.pos;
+  const previousVertical = previousDims?.def.vertical;
+  const isCornerG = def.vertical != previousVertical;
+  //TODO reconcile topG and rightG with top and right
+  const rightG = isCornerG || def.vertical ;
+  const topG = def.vertical;
+  const bdims = {
+    def,
+    g: { pos: groupPosition(topG, rightG, previousMeshPos) },
+    m: meshDimensions(def, breadth, depth, top, right, def.vertical),
+    color: COLORS[def.fold ? 1 : 0]
+  };
+  return bdims;
+}
+
+export const createAllDims = (blockDefinitions, width = WIDTH, thickness = THICKNESS) =>
+  blockDefinitions.reduce((dims, def, i) =>
+    [...dims, createBlockDims(width, thickness, def, dims[i-1] )], []);
+
 export function blockDimensionsToString(bdims){
   const { m, g, def: { name } } = bdims;
   const sizeString = [m.size.w, m.size.h].join(' ');
@@ -223,38 +246,21 @@ function createBoxMesh(blockDims, thickness){
   return mesh;
 }
 
-function createBlockDims(breadth, depth, def, previousDims) {
-  const top = false;
-  const right = def.vertical;
-
-  const previousMeshPos = previousDims?.m.pos;
-  const previousVertical = previousDims?.def.vertical;
-  const isCornerG = def.vertical != previousVertical;
-  //TODO reconcile topG and rightG with top and right
-  const rightG = isCornerG || def.vertical ;
-  const topG = def.vertical;
-  const bdims = {
-    def,
-    g: { pos: groupPosition(topG, rightG, previousMeshPos) },
-    m: meshDimensions(def, breadth, depth, top, right, def.vertical),
-    color: COLORS[def.fold ? 1 : 0]
-  };
-  return bdims;
+export function createMeshGroup(dims, thickness = THICKNESS) {
+        const parentGroup = createParentGroup(dims);
+        const mesh = createBoxMesh(dims, thickness);
+        parentGroup.add(mesh);
+        return mesh;
 }
 
-export function createMeshGroup(def, previousMesh,
-                                width = WIDTH, thickness = THICKNESS) {
-  const dims = createBlockDims(width, thickness, def, previousMesh?.userData.dims);
-  const parentGroup = createParentGroup(dims);
-  const mesh = createBoxMesh(dims, thickness);
-  parentGroup.add(mesh);
-  previousMesh?.parent.add(mesh.parent);
-  return mesh;
+export function createMeshes(blockDefinitions, width = WIDTH, thickness = THICKNESS) {
+    const allDims = createAllDims(blockDefinitions, width, thickness);
+    const meshes = allDims.map(dims => createMeshGroup(dims, thickness));
+    meshes.forEach((m,i) => {
+        if(i>0){ meshes[i-1].parent.add(m.parent); }
+    });
+    return meshes;
 }
-
-export const createMeshes = (blockDefinitions, width = WIDTH, thickness = THICKNESS) =>
-  blockDefinitions.reduce((meshes, def, i) =>
-    [...meshes, createMeshGroup(def, meshes[i-1], width, thickness)], []);
 
 export function resizeMesh(m,xyz){
   const [x,y,z] = xyz;

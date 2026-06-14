@@ -5,6 +5,7 @@ import {blockDefinitionsShort, blockDefinitionsLong,
         WIDTH, THICKNESS,
         createMeshGroup,
         createMeshes,
+        createAllDims,
         resizeMesh,
         axisOffset,
         groupPosition,
@@ -33,6 +34,8 @@ g.axisOffset = axisOffset
 // g.top=true; top is an inbuilt object
 g.bottom=false; g.right=true; g.left=false;
 g.foldYes=true; g.foldNo=false; g.vertical=true; g.horizontal=false;
+
+g.createAllDims = createAllDims
 
 const meshes1 = createMeshes(g.blockDefinitions);
 // const meshes1 = createMeshes(g.blockDimensions);
@@ -103,12 +106,15 @@ g.moveBelow = (mesh, previousMesh) => {
   mesh.parent.position.y = previousMesh ? previousMesh.position.y * -2: 0;
   mesh.position.y *= -1;
 }
-g.m0 = createMeshGroup( g.blockDefinitions[0]);
+g.allDims = createAllDims(g.blockDefinitions); 
+g.m0 = createMeshGroup( g.allDims[0]);
 g.m0.parent.position.z = 2
 scene.add(g.m0.parent);
-g.m1 = createMeshGroup( g.blockDefinitions[1], g.m0);
+g.m1 = createMeshGroup( g.allDims[1]);
 g.m1.parent.position.z = 1
-g.m2 = createMeshGroup( g.blockDefinitions[2], g.m1);
+g.m0.parent.add(g.m1.parent)
+g.m2 = createMeshGroup( g.allDims[2]);
+g.m1.parent.add(g.m2.parent)
 
 // in that order :P
 g.moveBelow(g.m2, g.m1);
