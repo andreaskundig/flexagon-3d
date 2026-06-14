@@ -10,7 +10,7 @@ import {blockDefinitionsShort, blockDefinitionsLong,
         groupPosition,
         makeSmallGreenSphere
        } from './flexagon.js';
-import { testAxisOffset} from './tests.js';
+import { runTests } from './tests.js';
 import { rotateAroundPoint, exposeObjectToWindow } from './utils.js';
 import { quaternions, RotateMesh, makeAnimations, runAnimations } from './animations.js';
 
@@ -27,7 +27,7 @@ g.groupPosition = groupPosition;
 g.blockDimensionsToString = blockDimensionsToString;
 g.createMeshGroup = createMeshGroup;
 g.makeSmallGreenSphere= makeSmallGreenSphere
-g.runTests = testAxisOffset;
+g.runTests = runTests
 g.axisOffset = axisOffset
 // arguments for axisOffset
 // g.top=true; top is an inbuilt object

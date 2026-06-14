@@ -1,4 +1,12 @@
-import { axisOffset } from './flexagon.js';
+import { axisOffset, meshDimensions, blockLength } from './flexagon.js';
+
+export function runTests() {
+    [testAxisOffset, testMeshDimensions]
+        .forEach(testFunc => {
+            console.log('run', testFunc.name);
+            testFunc();
+        });
+}
 
 export function testAxisOffset(){
   const top   = true;
@@ -36,8 +44,54 @@ export function testAxisOffset(){
 
 }
 
-function assertEqual(arr1, arr2) {
-  arr1.forEach((a1,i) => {
-    if (a1!=arr2[i]) { throw Error(`${arr1} != ${arr2}`); }
-  });
+export function testMeshDimensions(){
+    const breadth = 3;
+    const depth = 0.5;
+    const vertical = true;
+    const bottom = false;
+    const right = true;
+    const foldYes = true;
+    const foldNo = false;
+
+    assertEqual({size: {w: 3, h: 4}, pos: [-1.75, 2.25] },
+        meshDimensions({ fold: foldNo, size: 4 },
+            breadth, depth, bottom, right, vertical));
+
+    assertEqual({size: {w: 3, h: 1}, pos: [-1.75, 0.25] },
+        meshDimensions({ fold: foldYes, size: 2 },
+            breadth, depth, bottom, right, vertical));
+}
+
+function assertArrayEqual(arr1, arr2) {
+    arr1.forEach((a1, i) => {
+        assertEqualGeneric(a1, arr2[i]);
+    });
+}
+
+function assertObjectEqual(obj1, obj2) {
+    const keys1 = Object.keys(obj1).sort();
+    const keys2 = Object.keys(obj2).sort();
+    assertEqualGeneric(keys1, keys2);
+    keys1.forEach(k => {
+        assertEqualGeneric(obj1[k], obj2[k]);
+    });
+}
+
+function assertEqualGeneric(a,b) {
+        if (typeof a != typeof b) { throw Error(`typeof ${a} != typeof ${b}`); }
+        if (typeof a != 'object') {
+            if (a != b) { throw Error(`${a} != ${b}`); }
+        } else if (Array.isArray(a)) {
+            assertArrayEqual(a, b);
+        } else {
+            assertObjectEqual(a, b);
+        }
+}
+function assertEqual(a,b) {
+    try {
+        assertEqualGeneric(a,b);
+    } catch (err) {
+        console.error(' '+JSON.stringify(a), '\n!=\n', JSON.stringify(b));
+        console.error(err);
+    }
 }

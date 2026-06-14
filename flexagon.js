@@ -105,17 +105,22 @@ export function axisOffset(size, vertical, fold, top, right, perpToParall=1){
   return perpendicular.map((d,i) => d + parallel[i]);
 }
 
-export function blockSize(length, breadth, depth, vertical, fold){
-  const lengthAdjustment = fold ? depth : 1;
-  const adjLength = length * lengthAdjustment;
-  return vertical ? [breadth, adjLength] : [adjLength, breadth];
+export function blockLength(length, breadth, depth, vertical, fold){
+  let adjustedLength = length;
+  if (fold) { adjustedLength *= depth  }
+  return vertical ? [breadth, adjustedLength] : [adjustedLength, breadth];
 }
 
 /*
 
+Returns {size: {w, h}, pos: [x, y]
+size is the dimension of the block
+pos is it's position relative to the axis (origin of the group)
+
 vertical
 block: length 4, breadth 3, depth 0.5, vertical, nonfold, size [3,4]
 axis: size 0.25, nonfold, bottom right, offset [0.25,-0.25]
+pos: [-1.75, 2.25] distance of center from parent (?)
     ___________
     |         | - 3/2 - 0.25 = -1.75
     |    .....|....
@@ -124,7 +129,7 @@ axis: size 0.25, nonfold, bottom right, offset [0.25,-0.25]
                   |
 
 vertical
-block: length 1, breadth 3, depth 0.5, vertical, fold, size [3,1]
+block: length 2, breadth 3, depth 0.5, vertical, fold, size [3,1]
 axis: size 0.25, fold, bottom right, offset [0.25, 0.25]
     ___________
     |         | - 3/2 - (-0.25) = -1.75
@@ -133,9 +138,8 @@ axis: size 0.25, fold, bottom right, offset [0.25, 0.25]
     |_________|___|
 
  */
-
-function meshDimensions(def,breadth, depth, top, right, vertical){
-  const msize = blockSize(def.size, breadth, depth, vertical, def.fold);
+export function meshDimensions(def, breadth, depth, top, right, vertical){
+  const msize = blockLength(def.size, breadth, depth, vertical, def.fold);
   const axof = axisOffset(depth/2, vertical, def.fold, top, right);
   const multi = [right ? 1 : -1, top ? 1 : -1];
 
@@ -145,12 +149,11 @@ function meshDimensions(def,breadth, depth, top, right, vertical){
   // m.pos -= w/2 + axisOffset[0]
   const pos = msize.map((n,i) => - (n * multi[i] / 2 + axof[i]));
   const [w, h] = msize;
-  const color =  COLORS[def.fold ? 1 : 0];
-  return { size: { w , h }, pos, color };
+  return { size: { w , h }, pos };
 }
 
 // TODO calculate g.pos for top/right/bottom/left, on the current Dim, not previous
-// in order to have calcuation for m and g in the same place
+// in order to have calculation for m and g in the same place
 export function groupPosition(top, right, previousMeshPos) {
   if(!previousMeshPos) {// first
     return [0, 0];
@@ -210,10 +213,10 @@ function createParentGroup(block) {
 }
 
 function createBoxMesh(blockDims, thickness){
-  const { m, def: { name } } = blockDims;
+  const { m, def: { name }, color } = blockDims;
   const boxGeometry = new THREE.BoxGeometry(m.size.w, m.size.h, thickness);
   const mesh = new THREE.Mesh(boxGeometry, makeTextMaterial(
-    m.color, name, m.size.w / m.size.h));
+    color, name, m.size.w / m.size.h));
   mesh.position.set(...m.pos, 0);
   mesh.name = name;
   mesh.userData.dims = blockDims
@@ -229,11 +232,12 @@ function createBlockDims(breadth, depth, def, previousDims) {
   const isCornerG = def.vertical != previousVertical;
   //TODO reconcile topG and rightG with top and right
   const rightG = isCornerG || def.vertical ;
-  const topG = !isCornerG && def.vertical;
+  const topG = def.vertical;
   const bdims = {
     def,
     g: { pos: groupPosition(topG, rightG, previousMeshPos) },
-    m: meshDimensions(def, breadth, depth, top, right, def.vertical)
+    m: meshDimensions(def, breadth, depth, top, right, def.vertical),
+    color: COLORS[def.fold ? 1 : 0]
   };
   return bdims;
 }
