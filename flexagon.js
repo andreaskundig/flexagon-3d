@@ -122,7 +122,7 @@ block: length 4, breadth 3, depth 0.5, vertical, nonfold, size [3,4]
 axis: size 0.25, nonfold, bottom right, offset [0.25,-0.25]
 pos: [-1.75, 2.25] distance of center from parent (?)
     ___________
-    |         | - 3/2 - 0.25 = -1.75
+    |         |  3/2 + 0.25 = 1.75
     |    .....|....
     |         |   :
     |_________|___:  4/2 - (-0.25) = 2.25
@@ -132,7 +132,7 @@ vertical
 block: length 2, breadth 3, depth 0.5, vertical, fold, size [3,1]
 axis: size 0.25, fold, bottom right, offset [0.25, 0.25]
     ___________
-    |         | - 3/2 - (-0.25) = -1.75
+    |         |  3/2 + 0.25 = 1.75
     |    .....|....
     |         |   :  1/2 - 0.25 =  0.25
     |_________|___|
@@ -141,13 +141,16 @@ axis: size 0.25, fold, bottom right, offset [0.25, 0.25]
 export function meshDimensions(def, breadth, depth, top, right, vertical){
   const msize = blockLength(def.size, breadth, depth, vertical, def.fold);
   const axof = axisOffset(depth/2, vertical, def.fold, top, right);
-  const multi = [right ? 1 : -1, top ? 1 : -1];
+  const multi = [right ? -1 : 1, top ? -1 : 1];
 
   // distance to right corner = w/2
   // dist right corner to axis = axisOffset[0]
   // total distance to move towards = w/2 + axisOffset[0]
   // m.pos -= w/2 + axisOffset[0]
-  const pos = msize.map((n,i) => - (n * multi[i] / 2 + axof[i]));
+  const pos = [
+     msize[0] / 2 - axof[0] * multi[0],
+     msize[1] * multi[1] / 2 - axof[1]
+  ];
   const [w, h] = msize;
   return { size: { w , h }, pos };
 }
@@ -166,11 +169,9 @@ function createBlockDims(breadth, depth, def, previousDims) {
   const right = def.vertical;
 
   const previousMeshPos = previousDims?.m.pos;
-  const previousVertical = previousDims?.def.vertical;
-  const isCornerG = def.vertical != previousVertical;
   const bdims = {
     def,
-    g: { pos: groupPosition(def.vertical, !isCornerG, previousMeshPos) },
+    g: { pos: groupPosition(def.vertical, true, previousMeshPos) },
     m: meshDimensions(def, breadth, depth, top, right, def.vertical),
     color: COLORS[def.fold ? 1 : 0]
   };

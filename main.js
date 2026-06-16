@@ -42,6 +42,7 @@ const meshes1 = createMeshes(g.blockDefinitions);
 g.meshes1 = meshes1;
 meshes1.forEach(mesh => g[mesh.name] = mesh);
 
+g.allDims = createAllDims(g.blockDefinitions); 
 const meshes2 = createMeshes(g.blockDefinitions.map(b => ({...b, name: b.name +'b'})));
 meshes2.forEach(mesh => g[mesh.name] = mesh);
 g.meshes2 = meshes2;
@@ -49,8 +50,9 @@ g.qz180 = new THREE.Quaternion();
 g.qz180.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI);
 meshes2[0].parent.quaternion.multiply(g.qz180);
 meshes1[meshes1.length-1].parent.add(meshes2[0].parent);
-const lastDim = meshes1[meshes1.length-1].userData.dims
-meshes2[0].parent.position.set(lastDim.m.size.w - THICKNESS,
+const lastDim = g.allDims[g.allDims.length-1];
+const firstDim = g.allDims[0]
+meshes2[0].parent.position.set( lastDim.m.size.w + firstDim.m.size.w,
                                lastDim.m.size.h + THICKNESS);
 // meshes2[0].parent.quaternion.multiply(g.qhm90)
 
@@ -106,7 +108,6 @@ g.moveBelow = (mesh, previousMesh) => {
   mesh.parent.position.y = previousMesh ? previousMesh.position.y * -2: 0;
   mesh.position.y *= -1;
 }
-g.allDims = createAllDims(g.blockDefinitions); 
 g.m0 = createMeshGroup( g.allDims[0]);
 g.m0.parent.position.z = 2
 scene.add(g.m0.parent);
