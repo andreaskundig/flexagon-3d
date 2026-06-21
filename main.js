@@ -49,7 +49,8 @@ g.meshes2 = meshes2;
 g.qz180 = new THREE.Quaternion();
 g.qz180.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI);
 meshes2[0].parent.quaternion.multiply(g.qz180);
-meshes1[meshes1.length-1].parent.add(meshes2[0].parent);
+// ADD MESHES2
+// meshes1[meshes1.length-1].parent.add(meshes2[0].parent);
 const lastDim = g.allDims[g.allDims.length-1];
 const firstDim = g.allDims[0]
 meshes2[0].parent.position.set( lastDim.m.size.w + firstDim.m.size.w,

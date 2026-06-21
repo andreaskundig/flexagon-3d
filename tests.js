@@ -50,12 +50,12 @@ export function testMeshDimensions(){
     const right = true;
 
     assertEqual({size: {w: 3, h: 4}, pos: [1.75, 2.25] },
-        meshDimensions({ fold: false, size: 4 },
-            breadth, depth, !top, right, vertical));
+        meshDimensions({ fold: false, size: 4, vertical},
+            breadth, depth, !top, right));
 
     assertEqual({size: {w: 3, h: 1}, pos: [1.75, 0.25] },
-        meshDimensions({ fold: true, size: 2 },
-            breadth, depth, !top, right, vertical));
+        meshDimensions({ fold: true, size: 2, vertical},
+            breadth, depth, !top, right));
 }
 
 function assertArrayEqual(arr1, arr2) {
