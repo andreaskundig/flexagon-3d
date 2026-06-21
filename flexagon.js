@@ -3,6 +3,8 @@ import * as THREE from 'three';
 export const WIDTH = 3;
 export const THICKNESS = 0.5;
 const COLORS = ['#00ffff','#ffff00', '#ff00ff', '#00ff00', '#ff0000', '#0000ff'];
+const CP = {N: 'n', E: 'e', S: 's', W: 'w'}; // cardinal points
+const CP_ORDER = [CP.N, CP.E, CP.S, CP.W];
 
 export const blockDefinitionsShort = [
   {vertical: true,  size: 4, angle:   0, name: "u1"},
@@ -40,12 +42,38 @@ export const blockDefinitionsLong = [
   {vertical: false, size: 1, angle:   0, name: "u9_10"}
 ];
 
-function addFold(blockDefinitions){
-  blockDefinitions.forEach((b,i) => b.fold = i%2 != 0);
+function addAttachDirection(blockDefinitions){
+    blockDefinitions.forEach((currentBlock, i) => {
+        const previousBlock = blockDefinitions[i-1];
+        if (!previousBlock){
+            return;
+        } 
+        if (!previousBlock.attach) {
+            currentBlock.attach = CP_ORDER[0];
+        } else if (currentBlock.vertical == previousBlock.vertical) {
+            console.log('no change')
+            currentBlock.attach = previousBlock.attach;
+        } else { // Change of direction
+            console.log('change')
+            // Assumes next has been set on the previous Block
+            const previousIndex = CP_ORDER.indexOf(previousBlock.attach);
+            // Assumes there's no direction change after the last Direction.
+            currentBlock.attach = CP_ORDER[previousIndex + 1];
+        }
+    });
 }
 
-addFold(blockDefinitionsLong);
-addFold(blockDefinitionsShort);
+function addFold(blockDefinitions){
+    blockDefinitions.forEach((b, i) => b.fold = i % 2 != 0);
+}
+
+function addComputedParams(blockDefinitions){
+    addFold(blockDefinitions);
+    addAttachDirection(blockDefinitions);
+}
+
+addComputedParams(blockDefinitionsLong);
+addComputedParams(blockDefinitionsShort);
 
 /*
   size
@@ -104,6 +132,7 @@ export function axisOffset(size, vertical, fold, top, right, perpToParall=1){
   if (fold == north) { parallel = parallel.map(d => -d); }
   return perpendicular.map((d,i) => d + parallel[i]);
 }
+
 
 export function blockLength(length, breadth, depth, vertical, fold){
   let adjustedLength = length;
@@ -183,11 +212,12 @@ export const createAllDims = (blockDefinitions, width = WIDTH, thickness = THICK
     [...dims, createBlockDims(width, thickness, def, dims[i-1] )], []);
 
 export function blockDimensionsToString(bdims){
-  const { m, g, def: { name } } = bdims;
+  const { m, g, def: { name, attach } } = bdims;
   const sizeString = [m.size.w, m.size.h].join(' ');
   let logm = `${String(name).padEnd(5, ' ')}|s ${sizeString}|`;
   logm += `g${g.pos.map(formatNum).join(' ')}|`;
   logm += `m ${m.pos.map(formatNum).join(' ')}|`;
+  logm += attach;
   return logm;
 }
 
