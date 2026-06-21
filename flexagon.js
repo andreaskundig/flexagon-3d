@@ -6,41 +6,49 @@ const COLORS = ['#00ffff','#ffff00', '#ff00ff', '#00ff00', '#ff0000', '#0000ff']
 const CP = {N: 'n', E: 'e', S: 's', W: 'w'}; // cardinal points
 
 export const blockDefinitionsShort = [
-  {vertical: true,  size: 4, angle:   0,               name: "u1"},
-  {vertical: true,  size: 2, angle:  90, attach: CP.S, name: "u1_2"},
-  {vertical: true,  size: 4, angle: -90, attach: CP.S, name: "u2"},
-  {vertical: true,  size: 4, angle: -90, attach: CP.S, name: "u3"},
-  {vertical: true,  size: 4, angle: -90, attach: CP.S, name: "u4"},
-  {vertical: true,  size: 2, angle: -90, attach: CP.S, name: "u4_5"},
-  {vertical: true,  size: 3, angle: -90, attach: CP.S, name: "u5"},
-  {vertical: false, size: 2, angle: -90, attach: CP.W, name: "u5_6"},
-  {vertical: false, size: 3, angle: -90, attach: CP.W, name: "u6"},
-  {vertical: false, size: 4, angle: -90, attach: CP.W, name: "u7"},
-  {vertical: false, size: 4, angle: -90, attach: CP.W, name: "u8"},
-  {vertical: false, size: 4, angle: -90, attach: CP.W, name: "u9"},
-  {vertical: true,  size: 4, angle:  90, attach: CP.W, name: "v1b"},
-  {vertical: true,  size: 2, angle:  90, attach: CP.N, name: "v1_2"}
+    { vertical: true, size: 4, angle: 0, name: "u1" },
+    { vertical: true, size: 2, angle: 90, attach: CP.S, name: "u1_2" },
+    { vertical: true, size: 4, angle: -90, attach: CP.S, name: "u2" },
+    { vertical: true, size: 4, angle: -90, attach: CP.S, name: "u3" },
+    { vertical: true, size: 4, angle: -90, attach: CP.S, name: "u4" },
+    { vertical: true, size: 2, angle: -90, attach: CP.S, name: "u4_5" },
+    { vertical: true, size: 3, angle: -90, attach: CP.S, name: "u5" },
+    { vertical: false, size: 2, angle: -90, attach: CP.W, name: "u5_6" },
+    { vertical: false, size: 3, angle: -90, attach: CP.W, name: "u6" },
+    { vertical: false, size: 4, angle: -90, attach: CP.W, name: "u7" },
+    { vertical: false, size: 4, angle: -90, attach: CP.W, name: "u8" },
+    { vertical: false, size: 4, angle: -90, attach: CP.W, name: "u9" },
+    //TODO fix rotation
+    { vertical: true, size: 4, angle: 90, attach: CP.W, name: "v1b" },
+    { vertical: true, size: 2, angle: 90, attach: CP.N, name: "v1_2" },
+    { vertical: true, size: 4, angle: -90, attach: CP.N, name: "v2" },
+    { vertical: true, size: 4, angle: -90, attach: CP.N, name: "v3" },
+    { vertical: true, size: 4, angle: -90, attach: CP.N, name: "v4" },
+    { vertical: true, size: 2, angle: -90, attach: CP.N, name: "v4_5" },
+    { vertical: true, size: 3, angle: -90, attach: CP.N, name: "v5" },
+    //TODO fix position
+    { vertical: false, size: 2, angle: -90, attach: CP.E, name: "v5_6" }
 ];
 
 export const blockDefinitionsLong = [
-  {vertical: true,  size: 4, angle:   0,               name: "u1"},
-  {vertical: true,  size: 2, angle:  90, attach: CP.S, name: "u1_2"},
-  {vertical: true,  size: 4, angle: -90, attach: CP.S, name: "u2"},
-  {vertical: true,  size: 1, angle: -90, attach: CP.S, name: "u2_3"},
-  {vertical: true,  size: 2, angle:   0, attach: CP.S, name: "u3"},
-  {vertical: true,  size: 1, angle: -90, attach: CP.S, name: "u3_4"},
-  {vertical: true,  size: 4, angle:   0, attach: CP.S, name: "u4"},
-  {vertical: true,  size: 2, angle: -90, attach: CP.S, name: "u4_5"},
-  {vertical: true,  size: 3, angle: -90, attach: CP.S, name: "u5"},
-  {vertical: false, size: 2, angle: -90, attach: CP.W, name: "u5_6"},
-  {vertical: false, size: 3, angle: -90, attach: CP.W, name: "u6"},
-  {vertical: false, size: 1, angle: -90, attach: CP.W, name: "u6_7"},
-  {vertical: false, size: 2, angle:   0, attach: CP.W, name: "u7"},
-  {vertical: false, size: 1, angle: -90, attach: CP.N, name: "u7_8"},
-  {vertical: false, size: 4, angle:   0, attach: CP.W, name: "u8"},
-  {vertical: false, size: 1, angle: -90, attach: CP.W, name: "u8_9"},
-  {vertical: false, size: 2, angle:   0, attach: CP.W, name: "u9"},
-  {vertical: false, size: 1, angle:   0, attach: CP.W, name: "u9_10"}
+    { vertical: true, size: 4, angle: 0, name: "u1" },
+    { vertical: true, size: 2, angle: 90, attach: CP.S, name: "u1_2" },
+    { vertical: true, size: 4, angle: -90, attach: CP.S, name: "u2" },
+    { vertical: true, size: 1, angle: -90, attach: CP.S, name: "u2_3" },
+    { vertical: true, size: 2, angle: 0, attach: CP.S, name: "u3" },
+    { vertical: true, size: 1, angle: -90, attach: CP.S, name: "u3_4" },
+    { vertical: true, size: 4, angle: 0, attach: CP.S, name: "u4" },
+    { vertical: true, size: 2, angle: -90, attach: CP.S, name: "u4_5" },
+    { vertical: true, size: 3, angle: -90, attach: CP.S, name: "u5" },
+    { vertical: false, size: 2, angle: -90, attach: CP.W, name: "u5_6" },
+    { vertical: false, size: 3, angle: -90, attach: CP.W, name: "u6" },
+    { vertical: false, size: 1, angle: -90, attach: CP.W, name: "u6_7" },
+    { vertical: false, size: 2, angle: 0, attach: CP.W, name: "u7" },
+    { vertical: false, size: 1, angle: -90, attach: CP.N, name: "u7_8" },
+    { vertical: false, size: 4, angle: 0, attach: CP.W, name: "u8" },
+    { vertical: false, size: 1, angle: -90, attach: CP.W, name: "u8_9" },
+    { vertical: false, size: 2, angle: 0, attach: CP.W, name: "u9" },
+    { vertical: false, size: 1, angle: 0, attach: CP.W, name: "u9_10" }
 ];
 
 function addFold(blockDefinitions){
@@ -49,7 +57,6 @@ function addFold(blockDefinitions){
 
 function addComputedParams(blockDefinitions){
     addFold(blockDefinitions);
-    // addAttachDirection(blockDefinitions);
 }
 
 addComputedParams(blockDefinitionsLong);
@@ -165,29 +172,31 @@ export function meshDimensions(def, breadth, depth, top, right){
   return { size: { w , h }, pos };
 }
 
-// TODO calculate g.pos for top/right/bottom/left, on the current Dim, not previous
-// in order to have calculation for m and g in the same place
-export function groupPosition(attachDirection, previousMeshPos) {
-  const after = [CP.S, CP.W].includes(attachDirection);
-  if(!previousMeshPos || !after) {
-    return [0, 0];
-  }
-  const vertical = [CP.N, CP.S].includes(attachDirection);
-  return vertical ? [0, previousMeshPos[1] * 2] : [previousMeshPos[0] * 2, 0] ;
+export function groupPosition(xOffset, yOffset, previousMeshPos) {
+    return [xOffset && previousMeshPos ? previousMeshPos[0] * 2 : 0,
+            yOffset && previousMeshPos ? previousMeshPos[1] * 2 : 0];
 }
 
 function createBlockDims(breadth, depth, def, previousDims) {
-  const right = [CP.N, CP.S].includes(def.attach);
-  const top = [CP.N, CP.E].includes(def.attach);
+    const right = [CP.N, CP.S].includes(def.attach);
+    const top = [CP.N, CP.W].includes(def.attach);
 
-  const previousMeshPos = previousDims?.m.pos;
-  const bdims = {
-    def,
-    g: { pos: groupPosition(def.attach, previousMeshPos) },
-    m: meshDimensions(def, breadth, depth, top, right, def.vertical),
-    color: COLORS[def.fold ? 1 : 0]
-  };
-  return bdims;
+    const previousDef = previousDims?.def;
+    let xGroupOffset = !def.vertical ;
+    let yGroupOffset = def.vertical ;
+    if(def.vertical != previousDef?.vertical) { //orientation change: corner
+        xGroupOffset = def.vertical || previousDef?.vertical;
+        yGroupOffset = !def.vertical;
+    }
+    
+    const previousMeshPos = previousDims?.m.pos;
+    const bdims = {
+        def,
+        g: { pos: groupPosition(xGroupOffset, yGroupOffset, previousMeshPos) },
+        m: meshDimensions(def, breadth, depth, top, right, def.vertical),
+        color: COLORS[def.fold ? 1 : 0]
+    };
+    return bdims;
 }
 
 export const createAllDims = (blockDefinitions, width = WIDTH, thickness = THICKNESS) =>
